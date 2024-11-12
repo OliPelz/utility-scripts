@@ -1,0 +1,88 @@
+#__START_MARKER__
+# template_version: v0.001
+
+# Makefile template using the essential colored help include
+#
+#
+# instructions:
+#
+# for the first time on any vanilla project, run "make" without any target, this will download the latest colored help include lib.
+# after that, you will have the colored help so running make for the second time will run it in "help" mode
+
+# Name of the include file
+# TARGET_DIR => must be relative to THIS dir
+TARGET_DIR = makefiles_inc
+TARGET_FILE = ./$(TARGET_DIR)/makefile_colored_help.inc
+MAKEFILE_LIB_GIT_URL = https://github.com/OliPelz/makefile-libs.git
+THIS_MAKEFILE_FILENAME := $(firstword $(MAKEFILE_LIST)) 
+
+# escpaced version
+ESC_TARGET_FILE = $(shell echo "$(TARGET_FILE)" | sed 's/\./\\./g' | sed '#/#\\/#g')
+
+# remove leading ./ from target dir
+CLEANED_TARGET_DIR := $(patsubst ./%,%,$(TARGET_DIR))
+
+# git clone or target temp will only be used for the first time and then removed
+git_clone_or_pull_temp:
+	@[ -d "./$(TARGET_DIR)" ] && git -C "$(TARGET_DIR)" pull || git clone "$(MAKEFILE_LIB_GIT_URL)" "$(TARGET_DIR)" || exit 1; \
+	[ -f .gitignore ] && grep -q '^$(CLEANED_TARGET_DIR)$$' .gitignore || echo '$(CLEANED_TARGET_DIR)' >> .gitignore;
+
+
+# after downloading lib file switch the .DEFAULT_GOAL, so this will never be called
+# NOW remove instructions we only needed running for the first time
+run_for_first_time_temp: git_clone_or_pull_temp
+	@if ! [ -s "Makefile" ]; then \
+		echo "Makefile does not exist...creating new"; \
+		cp $(THIS_MAKEFILE_FILENAME) Makefile; \
+		sed -i -E 's#.DEFAULT_GOAL  := run_for_first_time_temp#\.DEFAULT_GOAL := help#g' Makefile; \
+		sed -i -E 's%#__INCLUDE__%include $(ESC_TARGET_FILE)%g' Makefile; \
+		sed -i "/^#__START_MARKER__/,/^#__END_MARKER__/d" Makefile; \
+	else \
+		echo "Makefile exists...bailing out"; \
+	fi
+
+#__END_MARKER__
+#__INCLUDE__
+.DEFAULT_GOAL  := run_for_first_time_temp
+
+# configure this git project, possible targets:
+# 
+# git-ignore-all-submodule-changes:   - configure git to ignore all submodule changes
+# git-add-hooks                       - configure to use git hooks in ./git_hooks
+configure-git-project: # git-ignore-all-submodule-changes git-add-hooks
+
+##########################################################################################
+## prerequisites:
+requirements: configure-git-project ## install all requirements
+	# $(MAKE) add-git-hooks && \
+	# mkdir -p ./external-deps && \
+	# ( \
+	# $(MAKE) git-clone-or-pull GIT_REPO_URL=https://github.com/OliPelz/public-shell.git TARGET_DIR=./external-deps/public-shell-functions TO_GITIGNORE=true && cd ./external-deps/public-shell-functions && ./__first-time-run.sh; \
+    # ); \
+	# ( \
+	# $(MAKE) git-clone-or-pull GIT_REPO_URL=https://github.com/yaacov/argparse-sh.git TARGET_DIR=./external-deps/argparse-sh TO_GITIGNORE=true; \
+	# );
+
+	echo "TODO: install all requirements"
+foo: ## ipsum dolor sit
+	echo "not a fool"
+bar: ### it is what it is
+	echo "not going down the bar today"
+
+##########################################################################################
+## building:
+home: ## prints home dir
+	echo $(HOME)
+lorem: ## ipsum dolor sit
+	echo "this is lorem target"
+reset.yourmum: ### it is what it is
+	echo "how about that"
+
+##########################################################################################
+## deploying:
+ipsum: #### lorem sit
+	echo "whats up?"
+convert.it: ##### i am feeling lucky
+	echo "back to basics"
+delete.it: prompt_me ### test the prompt_me target
+	echo "now delete something"
