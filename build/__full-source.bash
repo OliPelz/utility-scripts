@@ -621,6 +621,22 @@ echo "$parsed_output"
 esac
 return 0
 }
+function log_proxy_state {
+if test_env_variable_defined USE_PROXY; then
+log_info "USE_PROXY is set, so will use a proxy"
+if ! test_env_variable_defined HTTPS_PROXY; then
+log_warn "HTTPS_PROXY is not set, so using a proxy will go wrong!"
+return 1
+fi
+if test_env_variable_defined CERT_BASE64_STRING; then
+log_info "CERT_BASE64_STRING is set, so we will use a custom cert for proxy usage!"
+fi
+return 0
+else
+log_info "We DONT use a proxy!"
+return 1
+fi
+}
 function pcurl_wrapper {
 local url="$1"
 shift
