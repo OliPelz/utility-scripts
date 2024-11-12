@@ -1,5 +1,47 @@
 #!/bin/bash
 
+function log_proxy_state {
+    : '
+    Log proxy state
+
+    ShortDesc: A helper function to log the state of the current proxy envs used by all proxy wrapper functions.
+
+    Description:
+    This function provides a convenient way to log out the state of the current proxy settings (via env vars).
+    These env vars are used by all my proxy wrapper functions like pcurl_wrapper, pwget_wrapper etc.
+    So it might be interesting to run them right before
+
+    Parameters:
+    - no
+
+    Environment Variables:
+    - USE_PROXY: Set to "true" to enable proxy usage.
+    - HTTPS_PROXY: The proxy URL to use if USE_PROXY is true.
+    - CERT_BASE64_STRING: Base64-encoded SSL certificate string for verifying proxy connections (optional).
+
+    Returns:
+    - 0: Success, if proxy vars are set correct
+    - 1: Failure  if proxy vars are not set correctly
+
+    Example Usage:
+    pcurl_wrapper "https://example.com" --verbose --header "User-Agent: CustomAgent"
+    '
+	if test_env_variable_defined USE_PROXY; then
+		log_info "USE_PROXY is set, so will use a proxy"
+		if ! test_env_variable_defined HTTPS_PROXY; then
+			log_warn "HTTPS_PROXY is not set, so using a proxy will go wrong!"
+			return 1
+		fi
+		if test_env_variable_defined CERT_BASE64_STRING; then
+			log_info "CERT_BASE64_STRING is set, so we will use a custom cert for proxy usage!"
+		fi
+		return 0
+	else
+		log_info "We DONT use a proxy!"
+		return 1
+	fi
+}
+
 function pcurl_wrapper {
     : '
     Curl Proxy Wrapper
