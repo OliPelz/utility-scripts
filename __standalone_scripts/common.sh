@@ -11,7 +11,7 @@
 # and dont have internet as a prestep to setup and download advanced function libs 
 #
 # to fetch the latest copy of this script to your project do:
-# curl -O __minimal_common.sh https://raw.githubusercontent.com/OliPelz/public-shell/main/__standalone_scripts/common.sh
+# curl -O __standalone_minimal_common.sh https://raw.githubusercontent.com/OliPelz/public-shell/main/__standalone_scripts/common.sh
 #
 # then to use it in your target script use
 #
