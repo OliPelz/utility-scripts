@@ -134,22 +134,61 @@ fc_get_parent_directory() {
     dirname "$script_dir"
 }
 
-# curl wrapper which can work behind proxy
-# to use proxy feature define:
-#
-# - USE_PROXY: Set to true to enable proxy usage, false to disable it.
-# - HTTPS_PROXY: The proxy URL to use.
-# - CERT_BASE64_STRING: Base64-encoded SSL certificate string for verifying proxy connections (optional).
-# returns 0 if download success, >0 otherwise
 fc_pcurl_wrapper() {
+    : '
+        Curl Wrapper with Proxy and Certificate Support
+
+        ShortDesc: A flexible curl wrapper that supports proxy and certificate options, with an option to download to a temporary file.
+
+        Description:
+        This function serves as a wrapper around `curl`, providing proxy and certificate handling based on environment variables.
+        It outputs the download directly to stdout by default, but with the `--temp-file` option, it will save the download to a temporary file and
+        echo the filename, allowing the caller to capture it in a variable.
+
+        Parameters:
+        - url (required): The URL to download content from.
+        - additional_params (optional): Additional parameters to pass to curl (e.g., headers or specific flags).
+        - --temp-file (optional): If provided, downloads content to a temporary file and echoes the filename. 
+                                  If not provided, content is output directly to stdout.
+
+        Environment Variables:
+        - USE_PROXY: Set to "true" to enable proxy usage.
+        - CERT_BASE64_STRING: Base64 encoded certificate string, used if USE_PROXY is true.
+        - HTTPS_PROXY: Proxy URL, required if USE_PROXY is enabled.
+
+        Example Usage:
+        # Download directly to stdout
+        fc_pcurl_wrapper "https://example.com/file" --header "Custom-Header: Value"
+
+        # Download to a temporary file and capture the filename in a variable
+        my_file=$(fc_pcurl_wrapper "https://example.com/file" --temp-file)
+    '
+
     local url="$1"
     shift
-    local additional_params="$@"
+    local additional_params=""
+    local download_to_temp_file=false
+    local temp_file
+
+    # Parse arguments to check for --temp-file flag
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --temp-file)
+                download_to_temp_file=true
+                shift
+                ;;
+            *)
+                additional_params+="$1 "
+                shift
+                ;;
+        esac
+    done
 
     local curl_cmd="curl"
     local proxy_cmd=""
     local cert_cmd=""
 
+    # Set proxy and certificate options if USE_PROXY is true
     if [ "${USE_PROXY,,}" == "true" ]; then
         if test_env_variable_defined CERT_BASE64_STRING; then
             # Create a temporary file for the cert
@@ -160,16 +199,26 @@ fc_pcurl_wrapper() {
         proxy_cmd="--proxy ${HTTPS_PROXY}"
     fi
 
-    # Execute curl with the appropriate options
-    ${curl_cmd} ${proxy_cmd} ${cert_cmd} ${additional_params} "${url}"
-    my_rc=$?
+    if [ "$download_to_temp_file" = true ]; then
+        # Create a temporary file for download
+        temp_file=$(mktemp)
+        ${curl_cmd} ${proxy_cmd} ${cert_cmd} ${additional_params} -o "${temp_file}" "${url}"
+        my_rc=$?
+        echo "${temp_file}"
+    else
+        # Output to stdout
+        ${curl_cmd} ${proxy_cmd} ${cert_cmd} ${additional_params} "${url}"
+        my_rc=$?
+    fi
 
     # Clean up temporary cert file if created
     if [ -n "${TEMP_CERT_FILE}" ]; then
         rm "${TEMP_CERT_FILE}"
     fi
+
     return ${my_rc}
 }
+
 
 # download latest full source shell script file from git
 #
