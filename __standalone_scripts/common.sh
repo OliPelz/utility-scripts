@@ -19,6 +19,14 @@
 # s=${BASH_SOURCE:-${(%):-%x}} d=$(cd "$(dirname "$s")" && pwd) && source $d/common.sh
 #
 
+# checks if current user is root or not
+is_root() {
+   if [[ $EUID -ne 0 ]]; then
+      return 1
+   fi
+   return 0
+}
+
 # Function to test if an environment variable is defined
 fc_test_env_variable_defined() {
     local var_name="$1"
