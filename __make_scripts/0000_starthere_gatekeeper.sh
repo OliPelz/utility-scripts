@@ -26,15 +26,15 @@ temp_test_env_variable_defined() {
 }
 has_errors=false
 # first check before sourcing
-if ! temp_test_env_variable_defined DOTFILES_REPO_FULL_PATH; then
+if ! temp_test_env_variable_defined THIS_REPO_FULL_PATH; then
     abort_color="\033[1;95m" # same as in my colored.sh file for ABORT log event
-    echo -e "${abort_color}[ABORT]\033[0m check failed, mandantory environment variable DOTFILES_REPO_FULL_PATH is not defined, bailing out"
+    echo -e "${abort_color}[ABORT]\033[0m check failed, mandantory environment variable THIS_REPO_FULL_PATH is not defined, bailing out"
     has_error=true
 fi
 # now source some external functions
-source ${DOTFILES_REPO_FULL_PATH}/src/0001_common.sh
-source ${DOTFILES_REPO_FULL_PATH}/src/0002_colored.sh
-source ${DOTFILES_REPO_FULL_PATH}/src/0003_logging.sh
+source ${THIS_REPO_FULL_PATH}/src/0001_common.sh
+source ${THIS_REPO_FULL_PATH}/src/0002_colored.sh
+source ${THIS_REPO_FULL_PATH}/src/0003_logging.sh
 
 #########################################################################################################
 ## now we can use all my external functions
