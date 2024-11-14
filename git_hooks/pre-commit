@@ -1,0 +1,12 @@
+#!/bin/sh
+#
+# To enable this hook, rename this file to "pre-commit".
+
+# Run 'make compile' before each commit
+make compile
+
+# Check the exit status of make compile
+if [ $? -ne 0 ]; then
+    echo "Pre-commit hook failed: 'make compile' encountered an error."
+    exit 1
+fi
