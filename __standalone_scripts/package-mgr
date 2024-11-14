@@ -66,7 +66,8 @@ function normalize_return_code() {
         apt|dnf)
             [[ $return_code -eq 0 ]] && return 0 || return 1 ;;
         pacman)
-            [[ $return_code -eq 0 || $return_code -eq 1 ]] && return 0 || return 1 ;;
+            [[ $return_code -eq 0 ]] && return 0 || return 1 ;;
+            #[[ $return_code -eq 0 || $return_code -eq 1 ]] && return 0 || return 1 ;;
         *)
             echo "[ERROR] Unsupported package manager."
             return 1 ;;
@@ -140,21 +141,25 @@ function main {
     # Set up proxy and SSL cert if enabled
     setup_proxy_and_cert
 
+	return_code=-1
     # Detect and use appropriate package manager
     if command -v dnf &> /dev/null; then
         _dnf_wrapper
+		return_code=$?
     elif command -v pacman &> /dev/null; then
         _pacman_wrapper
+		return_code=$?
     elif command -v apt &> /dev/null; then
         _apt_wrapper
+		return_code=$?
     else
         echo "[ERROR] Unsupported distribution. No recognized package manager found."
-        exit 1
+        return_code=2
     fi
 
     # Cleanup temporary cert file if created
     [[ -n "$TEMP_CERT_FILE" ]] && rm -f "$TEMP_CERT_FILE"
+	return "${return_code}"
 }
 
 main
-
