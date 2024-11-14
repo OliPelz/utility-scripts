@@ -218,27 +218,30 @@ fc_pcurl_wrapper() {
 
     return ${my_rc}
 }
+_download_helper() {
+	DOWNLOAD_URL=$1
+	name=$2
+
+	# downloading might use the following proxy env vars, depending on your situation:
+	# - USE_PROXY: Set to true to enable proxy usage, false to disable it.
+	# - HTTPS_PROXY: The proxy URL to use.
+	# - CERT_BASE64_STRING: Base64-encoded SSL certificate string for verifying proxy connections (optional).
+
+	temp_downloaded_source=$(mktemp --suffix ".download.sh")
+	if fc_pcurl_wrapper $DOWNLOAD_URL -o ${temp_downloaded_source}; then
+		fc_log_info "downloaded '$name' successfully to '${temp_downloaded_source}'"
+		echo $temp_downloaded_source
+	else
+		fc_log_error "could not download '$name' file from '$DOWNLOAD_URL'"
+		echo ""
+	fi
+}
 
 
 # download latest full source shell script file from git
 #
 fc_download_full_source() {
 	DOWNLOAD_URL=https://raw.githubusercontent.com/OliPelz/public-shell/main/build/__full-source.bash 
-
-	# info out if proxy use
-	if fc_test_env_variable_defined USE_PROXY; then
-	    fc_log_info "USE_PROXY defined, we are now using a proxy!!!" 
-	    for info_env in HTTPS_PROXY CERT_BASE64_STRING; do
-	      if temp_test_env_variable_defined $info_env; then
-		 fc_log_info "$info_env defined" 
-	      else
-		 fc_log_info "$info_env NOT defined, please recheck if proxy is not working" 
-	      fi
-	    done
-	else
-	    fc_log_info "USE_PROXY NOT defined, we are NOT using a proxy" 
-	fi
-
 
 
 	# download my latest compiled public shell functions to a temporary location
@@ -248,12 +251,19 @@ fc_download_full_source() {
 	# - HTTPS_PROXY: The proxy URL to use.
 	# - CERT_BASE64_STRING: Base64-encoded SSL certificate string for verifying proxy connections (optional).
 
-	temp_downloaded_source=$(mktemp --suffix ".download.sh")
-	if fc_pcurl_wrapper $DOWNLOAD_URL -o ${temp_downloaded_source}; then
-		fc_log_info "downloaded source successfully to ${temp_downloaded_source}"
-		echo $temp_downloaded_source
-	else
-		fc_log_error "could not download full source file from $DOWNLOAD_URL"
-		echo ""
-	fi
+	_download_helper $DOWNLOAD_URL "full compiled source"
+}
+
+
+fc_download_package_mgr() {
+	DOWNLOAD_URL=https://raw.githubusercontent.com/OliPelz/public-shell/main/__standalone_scripts/package-mgr
+
+	# download my latest and greatest package-mgr
+	# 
+	# this might use the following proxy env vars, depending on your situation:
+	# - USE_PROXY: Set to true to enable proxy usage, false to disable it.
+	# - HTTPS_PROXY: The proxy URL to use.
+	# - CERT_BASE64_STRING: Base64-encoded SSL certificate string for verifying proxy connections (optional)._download_helper $DOWNLOAD_URL "full compiled source"
+
+	_download_helper $DOWNLOAD_URL "package manager"
 }
