@@ -20,7 +20,7 @@
 #
 
 # checks if current user is root or not
-is_root() {
+fc_is_root() {
    if [[ $EUID -ne 0 ]]; then
       return 1
    fi
