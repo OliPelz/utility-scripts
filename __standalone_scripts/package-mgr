@@ -20,8 +20,8 @@ Environment Variables:
 - CERT_BASE64_STRING: Base64-encoded SSL certificate string for verifying proxy connections (optional).
 
 Returns:
-- 0: Success
-- 1: Failure (if not run as root, if the package manager fails, or if the distribution is unsupported)
+- 0: Success (including re-download for `pacman`)
+- 1: Failure (for package installation errors or unsupported distribution)
 
 Example Usage:
 ./package-mgr --install vim,git --timeout 900
@@ -55,6 +55,24 @@ function setup_proxy_and_cert() {
     fi
 }
 
+# Return code normalization function
+function normalize_return_code() {
+    local return_code=$1
+    local manager=$2
+    
+    # For all package managers, treat a "nothing to do" or "already up to date" as success (0)
+    # Otherwise, return 1 only for errors that would prevent installation or updates.
+    case "$manager" in
+        apt|dnf)
+            [[ $return_code -eq 0 ]] && return 0 || return 1 ;;
+        pacman)
+            [[ $return_code -eq 0 || $return_code -eq 1 ]] && return 0 || return 1 ;;
+        *)
+            echo "[ERROR] Unsupported package manager."
+            return 1 ;;
+    esac
+}
+
 # Wrapper for pacman with proxy and cert support
 function _pacman_wrapper {
     local config_file=$(mktemp)
@@ -71,6 +89,7 @@ function _pacman_wrapper {
         remove) pacman --config "$config_file" -R --noconfirm ${packages//,/ } ;;
         update) pacman --config "$config_file" -Syu --noconfirm ;;
     esac
+    normalize_return_code $? "pacman"
 }
 
 # Wrapper for dnf with proxy and cert support
@@ -89,6 +108,7 @@ function _dnf_wrapper {
         remove) dnf -c "$config_file" remove -y ${packages//,/ } ;;
         update) dnf -c "$config_file" upgrade -y ;;
     esac
+    normalize_return_code $? "dnf"
 }
 
 # Wrapper for apt with proxy and cert support
@@ -107,6 +127,7 @@ function _apt_wrapper {
         remove) apt -c "$config_file" remove -y ${packages//,/ } ;;
         update) apt -c "$config_file" update && apt -c "$config_file" upgrade -y ;;
     esac
+    normalize_return_code $? "apt"
 }
 
 function main {
@@ -136,3 +157,4 @@ function main {
 }
 
 main
+
