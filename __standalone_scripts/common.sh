@@ -278,3 +278,13 @@ fc_download_package_mgr() {
 
 	_download_helper $DOWNLOAD_URL "package manager"
 }
+
+fc_download_reboot_needed() {
+	DOWNLOAD_URL=https://raw.githubusercontent.com/OliPelz/public-shell/main/__standalone_scripts/reboot_needed.sh
+
+	# download my latest reboot_needed.sh script
+
+	_download_helper $DOWNLOAD_URL "reboot needed script"
+}
+
+
