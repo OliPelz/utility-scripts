@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Colors for output
 HIGHLIGHT='\033[1;33m'
