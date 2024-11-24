@@ -1,15 +1,16 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-# import common.sh
-s=${BASH_SOURCE:-${(%):-%x}} d=$(cd "$(dirname "$s")" && pwd) && source $d/common.sh
+# Colors for output
+HIGHLIGHT='\033[1;33m'
+NC='\033[0m' # No Color
 
 # Function to check if a reboot is needed on Debian/Ubuntu
 check_reboot_needed_debian() {
     if [ -f /var/run/reboot-required ]; then
-	fc_log_info "[Debian/Ubuntu] Reboot is required.$"
+        echo -e "${HIGHLIGHT}[Debian/Ubuntu] Reboot is required.${NC}"
         return 0
     fi
-    fc_log_info2 "[Debian/Ubuntu] No reboot required."
+    echo -e "[Debian/Ubuntu] No reboot required."
     return 1
 }
 
@@ -18,14 +19,13 @@ check_reboot_needed_rhel() {
     if command -v needs-restarting &>/dev/null; then
         # Use needs-restarting to check if reboot is required
         if needs-restarting -r &>/dev/null; then
-            fc_log_info "[RHEL/Fedora] Reboot is required."
+            echo -e "${HIGHLIGHT}[RHEL/Fedora] Reboot is required.${NC}"
             return 0
         fi
     else
-        fc_log_warn "[RHEL/Fedora] needs-restarting tool not found, cannot check."
-        fc_log_warn "[RHEL/Fedora] please install needs-restarting manually"
+        echo -e "[RHEL/Fedora] needs-restarting tool not found, cannot check."
     fi
-    fc_log_info2 "[RHEL/Fedora] No reboot required."
+    echo -e "[RHEL/Fedora] No reboot required."
     return 1
 }
 
@@ -38,7 +38,7 @@ check_reboot_needed_arch() {
     running_kernel=$(uname -r)
     installed_kernel=$(pacman -Q linux | awk '{print $2}')
     if vercmp "$installed_kernel" "$running_kernel" != 0; then
-        fc_log_info "[Arch] Kernel version changed, reboot is required."
+        echo -e "${HIGHLIGHT}[Arch] Kernel version changed, reboot is required.${NC}"
         reboot_needed=0
     fi
 
@@ -46,7 +46,7 @@ check_reboot_needed_arch() {
     libc_installed_version=$(pacman -Q glibc | awk '{print $2}')
     libc_running_version=$(ldd --version | head -n 1 | awk '{print $NF}')
     if [[ "$libc_installed_version" != "$libc_running_version" ]]; then
-        fc_log_info "[Arch] glibc has been updated, reboot is required."
+        echo -e "${HIGHLIGHT}[Arch] glibc has been updated, reboot is required.${NC}"
         reboot_needed=0
     fi
 
@@ -54,7 +54,7 @@ check_reboot_needed_arch() {
     systemd_installed_version=$(pacman -Q systemd | awk '{print $2}')
     systemd_running_version=$(systemctl --version | head -n 1 | awk '{print $2}')
     if [[ "$systemd_installed_version" != "$systemd_running_version" ]]; then
-        fc_log_info "[Arch] systemd has been updated, reboot is required."
+        echo -e "${HIGHLIGHT}[Arch] systemd has been updated, reboot is required.${NC}"
         reboot_needed=0
     fi
 
@@ -62,7 +62,7 @@ check_reboot_needed_arch() {
         return 0
     fi
 
-    fc_log_info2 "[Arch] No reboot required."
+    echo -e "[Arch] No reboot required."
     return 1
 }
 
@@ -85,12 +85,12 @@ main() {
                 exit $?
                 ;;
             *)
-                fc_log_error "[ERROR] Unsupported OS: $ID"
+                echo "[ERROR] Unsupported OS: $ID"
                 exit 2
                 ;;
         esac
     else
-        fc_log_error "[ERROR] Unable to determine OS. /etc/os-release is missing."
+        echo "[ERROR] Unable to determine OS. /etc/os-release is missing."
         exit 2
     fi
 }
