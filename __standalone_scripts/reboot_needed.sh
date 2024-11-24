@@ -37,13 +37,13 @@ check_reboot_needed_arch() {
     # Check kernel
     running_kernel=$(uname -r)
     installed_kernel=$(pacman -Q linux | awk '{print $2}')
-    if vercmp "$installed_kernel" "$running_kernel" != 0; then
+    if [ $(vercmp "$installed_kernel" "$running_kernel") != 0 ]; then
         echo -e "${HIGHLIGHT}[Arch] Kernel version changed, reboot is required.${NC}"
         reboot_needed=0
     fi
 
     # Check glibc (libc)
-    libc_installed_version=$(pacman -Q glibc | awk '{print $2}')
+    libc_installed_version=$(pacman -Q glibc | awk '{print $2}' | cut -d '+' -f 1)
     libc_running_version=$(ldd --version | head -n 1 | awk '{print $NF}')
     if [[ "$libc_installed_version" != "$libc_running_version" ]]; then
         echo -e "${HIGHLIGHT}[Arch] glibc has been updated, reboot is required.${NC}"
@@ -52,7 +52,7 @@ check_reboot_needed_arch() {
 
     # Check systemd
     systemd_installed_version=$(pacman -Q systemd | awk '{print $2}')
-    systemd_running_version=$(systemctl --version | head -n 1 | awk '{print $2}')
+    systemd_running_version=$(systemctl --version | head -n 1 | awk '{print $3}' | sed 's|[()]||g' | sed 's|-arch||g')
     if [[ "$systemd_installed_version" != "$systemd_running_version" ]]; then
         echo -e "${HIGHLIGHT}[Arch] systemd has been updated, reboot is required.${NC}"
         reboot_needed=0
