@@ -634,7 +634,7 @@ fi
 return 0
 else
 log_info "We DONT use a proxy!"
-return 1
+return 0
 fi
 }
 function pcurl_wrapper {
