@@ -495,4 +495,29 @@ list_subdirectories() {
     find "$dir" -mindepth 1 -maxdepth "$max_depth" -type d -exec basename {} \;
 }
 
+can_use_sudo() {
+  : '
+      Check Sudo Privileges
+
+      ShortDesc: Test if the current user can use sudo to run commands
+
+      Description:
+      This function verifies if the user has sudo privileges by attemting to execute a simple command.
+
+      Returns:
+      - 0: User can run commands using sudo
+      - 1: User cannot run command using sudo or requires a password
+
+      Example usage:
+      if can_use_sudo; then
+	 echo "User can use sudo"
+      else
+	 echo "User cannot run sudo"
+      fi
+    '
+
+    sudo -n true 2>/dev/null
+    return $?
+}
+
 

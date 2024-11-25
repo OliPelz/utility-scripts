@@ -151,6 +151,10 @@ return 1
 fi
 find "$dir" -mindepth 1 -maxdepth "$max_depth" -type d -exec basename {} \;
 }
+can_use_sudo() {
+sudo -n true 2>/dev/null
+return $?
+}
 if [ -n "$BASH_VERSION" ]; then
 declare -A bash_colors
 bash_colors["black"]="\033[0;30m"
