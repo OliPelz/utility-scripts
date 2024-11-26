@@ -91,11 +91,13 @@ function pcurl_wrapper {
 
     # Execute curl with the appropriate options
     ${curl_cmd} ${proxy_cmd} ${cert_cmd} ${additional_params} "${url}"
+    rc=$?
 
     # Clean up temporary cert file if created
     if [ -n "${TEMP_CERT_FILE}" ]; then
         rm "${TEMP_CERT_FILE}"
     fi
+    return $rc
 }
 
 # additionally lets you define alternative pypi repository address and trusted hosts
@@ -170,11 +172,12 @@ function ppip_wrapper {
 
     # Execute pip with the appropriate options
     ${pip_cmd} ${proxy_cmd} ${cert_cmd} ${index_url_cmd} ${repo_url_command} ${trusted_host_cmd} ${command} ${additional_params}
-
+    rc=$?
     # Clean up temporary cert file if created
     if [ -n "${TEMP_CERT_FILE}" ]; then
         rm "${TEMP_CERT_FILE}"
     fi
+    return $rc
 }
 
 function pwget_wrapper {
@@ -227,11 +230,12 @@ function pwget_wrapper {
 
     # Execute wget with the appropriate options
     ${wget_cmd} ${proxy_cmd} ${cert_cmd} ${additional_params} "${url}"
-
+    rc=$?
     # Clean up temporary cert file if created
     if [ -n "${TEMP_CERT_FILE}" ]; then
         rm "${TEMP_CERT_FILE}"
     fi
+    return $rc
 }
 
 function pgit_wrapper {
@@ -299,9 +303,11 @@ function pgit_wrapper {
     else
         ${git_cmd} ${git_command} ${args}
     fi
+    rc=$?
 
     # Clean up temporary cert file if created
     if [ -n "${TEMP_CERT_FILE}" ]; then
         rm "${TEMP_CERT_FILE}"
     fi
+    exit $rc
 }

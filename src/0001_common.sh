@@ -504,6 +504,9 @@ can_use_sudo() {
       Description:
       This function verifies if the user has sudo privileges by attemting to execute a simple command.
 
+      Parameters:
+      - prompt-password (optinal): flag to prompt for sudo password, by default passwordless sudo is expected
+
       Returns:
       - 0: User can run commands using sudo
       - 1: User cannot run command using sudo or requires a password
@@ -515,9 +518,30 @@ can_use_sudo() {
 	 echo "User cannot run sudo"
       fi
     '
+    set -x
+    prompt_password=false
 
-    sudo -n true 2>/dev/null
+    # Parse arguments to check for --temp-file flag
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --prompt-password)
+                prompt_password=true
+                shift
+                ;;
+            *)
+	        fc_log_error "unknown parameter...bailing out" && return 1     
+                ;;
+        esac
+    done
+    
+    if [ $prompt_password == "true" ]; then
+      sudo true 2>/dev/null
+    else
+      sudo -n true 2>/dev/null
+    fi
     return $?
 }
+
+
 
 
