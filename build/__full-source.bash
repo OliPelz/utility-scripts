@@ -152,7 +152,24 @@ fi
 find "$dir" -mindepth 1 -maxdepth "$max_depth" -type d -exec basename {} \;
 }
 can_use_sudo() {
+set -x
+prompt_password=false
+while [[ $# -gt 0 ]]; do
+case "$1" in
+--prompt-password)
+prompt_password=true
+shift
+;;
+*)
+fc_log_error "unknown parameter...bailing out" && return 1
+;;
+esac
+done
+if [ $prompt_password == "true" ]; then
+sudo true 2>/dev/null
+else
 sudo -n true 2>/dev/null
+fi
 return $?
 }
 if [ -n "$BASH_VERSION" ]; then
@@ -657,9 +674,11 @@ fi
 proxy_cmd="--proxy ${HTTPS_PROXY}"
 fi
 ${curl_cmd} ${proxy_cmd} ${cert_cmd} ${additional_params} "${url}"
+rc=$?
 if [ -n "${TEMP_CERT_FILE}" ]; then
 rm "${TEMP_CERT_FILE}"
 fi
+return $rc
 }
 function ppip_wrapper {
 local command="$1"
@@ -689,9 +708,11 @@ if test_env_variable_defined PYTHON_TRUSTED_HOST; then
 trusted_host_cmd="--trusted-host ${PYTHON_TRUSTED_HOST}"
 fi
 ${pip_cmd} ${proxy_cmd} ${cert_cmd} ${index_url_cmd} ${repo_url_command} ${trusted_host_cmd} ${command} ${additional_params}
+rc=$?
 if [ -n "${TEMP_CERT_FILE}" ]; then
 rm "${TEMP_CERT_FILE}"
 fi
+return $rc
 }
 function pwget_wrapper {
 local url="$1"
@@ -709,9 +730,11 @@ fi
 proxy_cmd="--proxy=${HTTPS_PROXY}"
 fi
 ${wget_cmd} ${proxy_cmd} ${cert_cmd} ${additional_params} "${url}"
+rc=$?
 if [ -n "${TEMP_CERT_FILE}" ]; then
 rm "${TEMP_CERT_FILE}"
 fi
+return $rc
 }
 function pgit_wrapper {
 local git_command="$1"
@@ -739,9 +762,11 @@ eval "${ssh_cmd} ${git_cmd} ${git_command} ${args}"
 else
 ${git_cmd} ${git_command} ${args}
 fi
+rc=$?
 if [ -n "${TEMP_CERT_FILE}" ]; then
 rm "${TEMP_CERT_FILE}"
 fi
+exit $rc
 }
 vault() {
 local action=""
