@@ -201,8 +201,9 @@ function main {
 
     # Cleanup temporary cert file if created
     [[ -n "$TEMP_CERT_FILE" ]] && rm -f "$TEMP_CERT_FILE"
-    return "${return_code}"
+    exit "${return_code}"
 }
 
 main
+exit $?
 
