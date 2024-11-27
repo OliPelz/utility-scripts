@@ -87,29 +87,48 @@ get_current_shell_name() {
 }
 get_full_path_script_executed_in() {
     : '
-		Get Full Path of Script Executed In
+       Get Full Path of Script Executed In
 
-		ShortDesc: This function retrieves the full directory path of the currently executing script.
+        ShortDesc: Retrieves the full directory path of the script being executed or sourced.
 
-		Description:
-		This function checks the shell type (Bash or Zsh) and retrieves the full path of the script
-		being executed. It returns the directory of the script. If the shell is unsupported, it 
-		prints an error message and returns 1.
+        Description:
+        This function determines the directory path of the executing script, whether it is:
+        - sourced,
+        - run interactively
+        - or executed directly. 
+        It works for both Bash and Zsh.
+        NOTE: currently only works for Bash, i work on Zsh, but seems tricky
 
-		Parameters:
-		- None
+        Parameters:
+        - None
 
-		Returns:
-		- 0: Success (the full directory path is printed)
-		- 1: Failure (unsupported shell)
+        Returns:
+        - 0: Success (prints the full directory path)
+        - 1: Failure (unsupported shell or other error)
 
-		Example Usage:
-		echo "Script is located in: $(get_full_path_script_executed_in)"
+        Example Usage:
+        echo "Script is located in: $(get_full_path_script_executed_in)"
     '
 	if [ -n "$BASH_VERSION" ]; then
-		script_path="${BASH_SOURCE[0]}"
+        # Bash: Handle sourced and executed scripts
+        if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+            # Direct execution
+            script_path="${BASH_SOURCE[0]}"
+        else
+            # Sourced
+            script_path="${BASH_SOURCE[1]}"
+        fi
 	elif [ -n "$ZSH_VERSION" ]; then
-		script_path="${(%):-%x}"
+        echo "TODO: NOT IMPLEMENTED YET, SEEMS TO BE DIFFICULT TO MAKE IT WORK FOR sourced, executed and direct call"
+        return 1
+        # Zsh: Use ${(%):-%x} for both sourced and executed scripts
+        #if [[ "${(%):-%x}" == "$0" ]]; then
+        #    # Direct execution
+        #    script_path="$0"
+        #else
+        #    # Sourced
+        #    script_path="${(%):-%x}"
+        #fi
 	else
 	     echo "Unsupported shell"
 	     return 1
