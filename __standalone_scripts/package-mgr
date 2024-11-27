@@ -42,6 +42,7 @@ fc_log_error() {
 # Default timeout
 DOWNLOAD_TIMEOUT_SECONDS=600
 CUSTOM_FLAGS=""
+AUTO_CONFIRM="false"
 
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
@@ -50,6 +51,7 @@ while [[ "$#" -gt 0 ]]; do
         --remove) action="remove"; packages="$2"; shift ;;
         --system-update) action="update" ;;
         --timeout) DOWNLOAD_TIMEOUT_SECONDS="$2"; shift ;;
+	--confirm) AUTO_CONFIRM="true" ;;
         --custom-flags) CUSTOM_FLAGS="$2"; shift ;;
         *) fc_log_error "Unknown parameter: $1"; exit 1 ;;
     esac
@@ -98,18 +100,24 @@ function _pacman_wrapper {
         sed -i "/^\[options\]/a $proxy_command" "$config_file"
     fi
 
+    if [ "$AUTO_CONFIRM" == "true" ]; then
+        CONFIRM="--noconfirm"
+    else
+        CONFIRM=""
+    fi
+    
     # Use AUR helper if available, if a package can be accessed from both (official and Aur)
     # prefer official over AUR repo (this is done using --noaur option)
     if command -v yay &> /dev/null; then
-        yay --config "$config_file" --noaur -Sy --noconfirm ${packages//,/ }
+        yay --config "$config_file" --noaur -Sy $CONFIRM ${packages//,/ }
     elif command -v paru &> /dev/null; then
-        paru --config "$config_file" --noaur -Sy --noconfirm ${packages//,/ }
+        paru --config "$config_file" --noaur -Sy $CONFIRM ${packages//,/ }
     else
         # Fallback to plain pacman for official repo packages
         case "$action" in
-            install) pacman --config "$config_file" -Sy --noconfirm ${packages//,/ } ;;
-            remove) pacman --config "$config_file" -R --noconfirm ${packages//,/ } ;;
-            update) pacman --config "$config_file" -Syu --noconfirm ;;
+            install) pacman --config "$config_file" -Sy $CONFIRM ${packages//,/ } ;;
+            remove) pacman --config "$config_file" -R $CONFIRM ${packages//,/ } ;;
+            update) pacman --config "$config_file" -Syu $CONFIRM ;;
         esac
     fi
 
@@ -127,10 +135,16 @@ function _original_pacman_wrapper {
         sed -i "/^\[options\]/a $proxy_command" "$config_file"
     fi
 
+    if [ "$AUTO_CONFIRM" == "true" ]; then
+        CONFIRM="--noconfirm"
+    else
+        CONFIRM=""
+    fi
+
     case "$action" in
-        install) pacman --config "$config_file" -Sy --noconfirm $CUSTOM_FLAGS ${packages//,/ } ;;
-        remove) pacman --config "$config_file" -R --noconfirm ${packages//,/ } ;;
-        update) pacman --config "$config_file" -Syu --noconfirm $CUSTOM_FLAGS ;;
+        install) pacman --config "$config_file" -Sy $CONFIRM $CUSTOM_FLAGS ${packages//,/ } ;;
+        remove) pacman --config "$config_file" -R $CONFIRM ${packages//,/ } ;;
+        update) pacman --config "$config_file" -Syu $CONFIRM $CUSTOM_FLAGS ;;
     esac
     normalize_return_code $? "pacman"
 }
@@ -146,10 +160,16 @@ function _dnf_wrapper {
         echo -e "$proxy_addon" >> "$config_file"
     fi
 
+    if [ "$AUTO_CONFIRM" == "true" ]; then
+        CONFIRM="-y"
+    else
+        CONFIRM=""
+    fi
+
     case "$action" in
-        install) dnf -c "$config_file" install -y $CUSTOM_FLAGS ${packages//,/ } ;;
-        remove) dnf -c "$config_file" remove -y ${packages//,/ } ;;
-        update) dnf -c "$config_file" upgrade -y $CUSTOM_FLAGS ;;
+        install) dnf -c "$config_file" install $CONFIRM $CUSTOM_FLAGS ${packages//,/ } ;;
+        remove) dnf -c "$config_file" remove $CONFIRM ${packages//,/ } ;;
+        update) dnf -c "$config_file" upgrade $CONFIRM $CUSTOM_FLAGS ;;
     esac
     normalize_return_code $? "dnf"
 }
@@ -165,10 +185,16 @@ function _apt_wrapper {
         echo -e "$proxy_addon" >> "$config_file"
     fi
 
+    if [ "$AUTO_CONFIRM" == "true" ]; then
+        CONFIRM="-y"
+    else
+        CONFIRM=""
+    fi
+
     case "$action" in
-        install) apt -c "$config_file" install -y $CUSTOM_FLAGS ${packages//,/ } ;;
-        remove) apt -c "$config_file" remove -y ${packages//,/ } ;;
-        update) apt -c "$config_file" update && apt -c "$config_file" upgrade -y $CUSTOM_FLAGS ;;
+        install) apt -c "$config_file" install $CONFIRM $CUSTOM_FLAGS ${packages//,/ } ;;
+        remove) apt -c "$config_file" remove $CONFIRM ${packages//,/ } ;;
+        update) apt -c "$config_file" update $CONFIRM && apt -c "$config_file" upgrade $CONFIRM $CUSTOM_FLAGS ;;
     esac
     normalize_return_code $? "apt"
 }
