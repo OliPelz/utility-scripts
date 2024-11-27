@@ -107,25 +107,17 @@ get_full_path_script_executed_in() {
 		echo "Script is located in: $(get_full_path_script_executed_in)"
     '
 	if [ -n "$BASH_VERSION" ]; then
-		# bash coloring prompt, \e[0m is COLOROFF
-		echo -e "${bash_colors[${COLOR}]}${COLORED_CONTENT}\e[0m ${NONCOLORED_CONTENT}"
+		script_path="${BASH_SOURCE[0]}"
 	elif [ -n "$ZSH_VERSION" ]; then
-		# zsh coloring prompt
-		# %f is COLOROFF
-		print -P "${zsh_colors[${COLOR}]}${COLORED_CONTENT}%f ${NONCOLORED_CONTENT}"
+		script_path="${(%):-%x}"
+	else
+	     echo "Unsupported shell"
+	     return 1
 	fi
 
-    local MYSHELL_NAME=$(get_current_shell_name)
-    if [ "$MYSHELL_NAME" = "BASH" ]; then
-        script_path="${BASH_SOURCE[0]}"
-    elif [ "$MYSHELL_NAME" = "ZSH" ]; then
-        script_path="${(%):-%x}"
-    else
-        echo "Unsupported shell"
-        return 1
-    fi
-    script_dir="$(cd "$(dirname "$script_path")" && pwd)"
-    echo "$script_dir"
+	script_dir="$(cd "$(dirname "$script_path")" && pwd)"
+	echo "$script_dir"
+	return 0
 }
 
 get_parent_dir_name_of_script() {
