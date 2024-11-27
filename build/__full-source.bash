@@ -26,14 +26,8 @@ exit 0
 }
 get_full_path_script_executed_in() {
 if [ -n "$BASH_VERSION" ]; then
-echo -e "${bash_colors[${COLOR}]}${COLORED_CONTENT}\e[0m ${NONCOLORED_CONTENT}"
-elif [ -n "$ZSH_VERSION" ]; then
-print -P "${zsh_colors[${COLOR}]}${COLORED_CONTENT}%f ${NONCOLORED_CONTENT}"
-fi
-local MYSHELL_NAME=$(get_current_shell_name)
-if [ "$MYSHELL_NAME" = "BASH" ]; then
 script_path="${BASH_SOURCE[0]}"
-elif [ "$MYSHELL_NAME" = "ZSH" ]; then
+elif [ -n "$ZSH_VERSION" ]; then
 script_path="${(%):-%x}"
 else
 echo "Unsupported shell"
@@ -41,6 +35,7 @@ return 1
 fi
 script_dir="$(cd "$(dirname "$script_path")" && pwd)"
 echo "$script_dir"
+return 0
 }
 get_parent_dir_name_of_script() {
 local full_path
