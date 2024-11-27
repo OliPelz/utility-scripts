@@ -518,7 +518,6 @@ can_use_sudo() {
 	 echo "User cannot run sudo"
       fi
     '
-    set -x
     prompt_password=false
 
     # Parse arguments to check for --temp-file flag
