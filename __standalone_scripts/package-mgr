@@ -28,6 +28,17 @@ Example Usage:
 ./package-mgr --install vim,git --timeout 900 --custom-flags "--needed"
 '
 
+fc_log_info() {
+    echo -e "\033[0;32m[INFO]\033[0m $1" >&2
+}
+
+fc_log_info2() {
+    echo -e "\033[0;36m[INFO]\033[0m $1" >&2
+}
+fc_log_error() {
+    echo -e "\033[0;31m[ERROR]\033[0m $1" >&2
+}
+
 # Default timeout
 DOWNLOAD_TIMEOUT_SECONDS=600
 CUSTOM_FLAGS=""
@@ -40,7 +51,7 @@ while [[ "$#" -gt 0 ]]; do
         --system-update) action="update" ;;
         --timeout) DOWNLOAD_TIMEOUT_SECONDS="$2"; shift ;;
         --custom-flags) CUSTOM_FLAGS="$2"; shift ;;
-        *) echo "Unknown parameter: $1"; exit 1 ;;
+        *) fc_log_error "Unknown parameter: $1"; exit 1 ;;
     esac
     shift
 done
@@ -48,12 +59,12 @@ done
 # Proxy and SSL certificate setup
 function setup_proxy_and_cert() {
     if [[ "$USE_PROXY" == "true" ]]; then
-        echo "[INFO] Proxy usage is enabled, configuring package manager to use proxy."
+        fc_log_info "Proxy usage is enabled, configuring package manager to use proxy."
 
         if [[ -n "$CERT_BASE64_STRING" ]]; then
             TEMP_CERT_FILE=$(mktemp)
             echo "$CERT_BASE64_STRING" | base64 -d > "$TEMP_CERT_FILE"
-            echo "[INFO] Proxy SSL cert usage is enabled."
+            fc_log_info2 "Proxy SSL cert usage is enabled."
         fi
     fi
 }
@@ -71,7 +82,7 @@ function normalize_return_code() {
         pacman)
             [[ $return_code -eq 0 ]] && return 0 || return 1 ;;
         *)
-            echo "[ERROR] Unsupported package manager."
+            fc_log_error "Unsupported package manager."
             return 1 ;;
     esac
 }
@@ -79,7 +90,7 @@ function normalize_return_code() {
 # Wrapper for pacman and AUR helpers
 function _pacman_wrapper {
     local config_file=$(mktemp)
-    cp /etc/pacman.conf "$config_file" || { echo "[ERROR] Failed to copy pacman.conf"; return 1; }
+    cp /etc/pacman.conf "$config_file" || { fc_log_error "Failed to copy pacman.conf"; return 1; }
 
     if [[ "$USE_PROXY" == "true" ]]; then
         local proxy_command="XferCommand = /usr/bin/curl --proxy \"$HTTPS_PROXY\" -fC - --retry 3 --retry-delay 3 --connect-timeout $DOWNLOAD_TIMEOUT_SECONDS -o %o %u"
@@ -108,7 +119,7 @@ function _pacman_wrapper {
 # Wrapper for pacman with proxy and cert support
 function _original_pacman_wrapper {
     local config_file=$(mktemp)
-    cp /etc/pacman.conf "$config_file" || { echo "[ERROR] Failed to copy pacman.conf"; return 1; }
+    cp /etc/pacman.conf "$config_file" || { fc_log_error "Failed to copy pacman.conf"; return 1; }
 
     if [[ "$USE_PROXY" == "true" ]]; then
         local proxy_command="XferCommand = /usr/bin/curl --proxy \"$HTTPS_PROXY\" -fC - --retry 3 --retry-delay 3 --connect-timeout $DOWNLOAD_TIMEOUT_SECONDS -o %o %u"
@@ -127,7 +138,7 @@ function _original_pacman_wrapper {
 # Wrapper for dnf with proxy and cert support
 function _dnf_wrapper {
     local config_file=$(mktemp)
-    cp /etc/dnf/dnf.conf "$config_file" || { echo "[ERROR] Failed to copy dnf.conf"; return 1; }
+    cp /etc/dnf/dnf.conf "$config_file" || { fc_log_error "Failed to copy dnf.conf"; return 1; }
 
     if [[ "$USE_PROXY" == "true" ]]; then
         local proxy_addon="proxy=$HTTPS_PROXY\ntimeout=$DOWNLOAD_TIMEOUT_SECONDS"
@@ -146,7 +157,7 @@ function _dnf_wrapper {
 # Wrapper for apt with proxy and cert support
 function _apt_wrapper {
     local config_file=$(mktemp)
-    cp /etc/apt/apt.conf "$config_file" || { echo "[ERROR] Failed to copy apt.conf"; return 1; }
+    cp /etc/apt/apt.conf "$config_file" || { fc_log_error "Failed to copy apt.conf"; return 1; }
 
     if [[ "$USE_PROXY" == "true" ]]; then
         local proxy_addon="Acquire::https::proxy \"$HTTPS_PROXY\";\nAcquire::http::Timeout \"$DOWNLOAD_TIMEOUT_SECONDS\";\nAcquire::https::Timeout \"$DOWNLOAD_TIMEOUT_SECONDS\";"
@@ -165,7 +176,7 @@ function _apt_wrapper {
 function main {
     # Ensure script is run as root
     if [[ $EUID -ne 0 ]]; then
-        echo "[ERROR] script needs to be run as root"
+        fc_log_error "script needs to be run as root"
         exit 1
     fi
 
@@ -184,7 +195,7 @@ function main {
         _apt_wrapper
         return_code=$?
     else
-        echo "[ERROR] Unsupported distribution. No recognized package manager found."
+        fc_log_error "Unsupported distribution. No recognized package manager found."
         return_code=2
     fi
 

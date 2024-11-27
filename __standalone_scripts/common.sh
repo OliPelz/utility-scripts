@@ -86,6 +86,7 @@ fc_log_debug() {
 fc_log_info() {
     fc_should_log "INFO" && echo -e "\033[0;32m[INFO]\033[0m $1" >&2 # Green
 }
+
 fc_log_info2() {
     fc_should_log "INFO" && echo -e "\033[0;36m[INFO]\033[0m $1" >&2 # Green
 }
