@@ -152,7 +152,6 @@ fi
 find "$dir" -mindepth 1 -maxdepth "$max_depth" -type d -exec basename {} \;
 }
 can_use_sudo() {
-set -x
 prompt_password=false
 while [[ $# -gt 0 ]]; do
 case "$1" in
