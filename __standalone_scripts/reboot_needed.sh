@@ -37,6 +37,7 @@ check_reboot_needed_arch() {
     # Check kernel
     running_kernel=$(uname -r)
     installed_kernel=$(pacman -Q linux | awk '{print $2}')
+    # vercmp util is part of pacman package
     if [ $(vercmp "$installed_kernel" "$running_kernel") != 0 ]; then
         echo -e "${HIGHLIGHT}[Arch] Kernel version changed, reboot is required.${NC}"
         reboot_needed=0
