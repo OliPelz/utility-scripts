@@ -13,11 +13,27 @@ else
 return 1
 fi
 }
+get_current_shell_name() {
+if [ -n "$BASH_VERSION" ]; then
+echo BASH
+elif [ -n "$ZSH_VERSION" ]; then
+echo ZSH
+else
+echo unkown
+exit 1
+fi
+exit 0
+}
 get_full_path_script_executed_in() {
+if [ -n "$BASH_VERSION" ]; then
+echo -e "${bash_colors[${COLOR}]}${COLORED_CONTENT}\e[0m ${NONCOLORED_CONTENT}"
+elif [ -n "$ZSH_VERSION" ]; then
+print -P "${zsh_colors[${COLOR}]}${COLORED_CONTENT}%f ${NONCOLORED_CONTENT}"
+fi
 local MYSHELL_NAME=$(get_current_shell_name)
-if [ "$MYSHELL_NAME" = "bash" ]; then
+if [ "$MYSHELL_NAME" = "BASH" ]; then
 script_path="${BASH_SOURCE[0]}"
-elif [ "$MYSHELL_NAME" = "zsh" ]; then
+elif [ "$MYSHELL_NAME" = "ZSH" ]; then
 script_path="${(%):-%x}"
 else
 echo "Unsupported shell"
