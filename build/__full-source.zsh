@@ -102,7 +102,7 @@ detect_distribution() {
 if [ -f /etc/os-release ]; then
 . /etc/os-release
 case "${ID}" in
-fedora|centos|rhel)
+fedora|centos|rhel|alma)
 return "RHEL"
 ;;
 arch)
