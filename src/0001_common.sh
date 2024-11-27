@@ -365,22 +365,25 @@ detect_distribution() {
         . /etc/os-release
         case "${ID}" in
             fedora|centos|rhel|alma)
-                return "RHEL"
+                echo "RHEL"
+		return 0
                 ;;
             arch)
-                return "ARCH"
+                echo "ARCH"
+		return 0
                 ;;
             ubuntu|debian)
-                return "DEBIAN"
+                echo "DEBIAN"
+		return 0
                 ;;
             *)
                 echo "Unsupported distribution: ${ID}"
-                return "NONE"
+                return 1
                 ;;
         esac
     else
         echo "Cannot determine distribution."
-        return "NONE"
+        return 1
     fi
 }
 
