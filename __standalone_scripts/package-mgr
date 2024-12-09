@@ -15,7 +15,7 @@ Parameters:
 --timeout <seconds>: Set the timeout for commands (default is 600 seconds)
 --custom-flags <flags>: Custom flags to be passed to the package manager (e.g., --needed for pacman)
 --auto-confirm: automatically answer "yes" to all answers (no confirmation)
-
+--use-aur: Arch distribution only, use AUR helper (yay, paru) instead of pacman 
 Environment Variables:
 - USE_PROXY: Set to true to enable proxy usage, false to disable it.
 - HTTPS_PROXY: The proxy URL to use.
@@ -44,6 +44,7 @@ fc_log_error() {
 DOWNLOAD_TIMEOUT_SECONDS=600
 CUSTOM_FLAGS=""
 AUTO_CONFIRM="false"
+USE_AUR="false"
 
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
@@ -54,10 +55,21 @@ while [[ "$#" -gt 0 ]]; do
         --timeout) DOWNLOAD_TIMEOUT_SECONDS="$2"; shift ;;
 	--auto-confirm) AUTO_CONFIRM="true" ;;
         --custom-flags) CUSTOM_FLAGS="$2"; shift ;;
+	--use-aur) USE_AUR="true" ;;
         *) fc_log_error "Unknown parameter: $1"; exit 1 ;;
     esac
     shift
 done
+
+if [ "$USE_AUR" == "true" ]; then
+   if root; then
+       fc_log_error "when using --use-aur, you must NOT run this script as root or sudo!, ONLY normal user privilege is allowed"
+       exit 1
+   else
+      fc_log_error "needs sudo"
+      exit 1
+else 
+fi
 
 # Proxy and SSL certificate setup
 function setup_proxy_and_cert() {
@@ -90,7 +102,7 @@ function normalize_return_code() {
     esac
 }
 
-# Wrapper for pacman and AUR helpers
+# Wrapper for pacman 
 function _pacman_wrapper {
     local config_file=$(mktemp)
     cp /etc/pacman.conf "$config_file" || { fc_log_error "Failed to copy pacman.conf"; return 1; }
@@ -109,16 +121,22 @@ function _pacman_wrapper {
     
     # Use AUR helper if available, if a package can be accessed from both (official and Aur)
     # prefer official over AUR repo (this is done using --noaur option)
-    if command -v yay &> /dev/null; then
-        yay --config "$config_file" --noaur -Sy $CONFIRM ${packages//,/ }
-    elif command -v paru &> /dev/null; then
-        paru --config "$config_file" --noaur -Sy $CONFIRM ${packages//,/ }
+    EXECUTABLE=pacman
+    if [ "$USE_AUR" == "true" ]; then
+	if command -v yay &> /dev/null; then
+        	EXECUTABLE=yay
+    	elif command -v paru &> /dev/null; then
+        	EXECUTABLE=paru
+	else
+		fc_error_log "you configured to use 'AUR helper' but havent installed any AUR helper...bailing out"
+		exit 1
+	fi
     else
         # Fallback to plain pacman for official repo packages
         case "$action" in
-            install) pacman --config "$config_file" -Sy $CONFIRM ${packages//,/ } ;;
-            remove) pacman --config "$config_file" -R $CONFIRM ${packages//,/ } ;;
-            update) pacman --config "$config_file" -Syu $CONFIRM ;;
+            install) $USE_AUR --config "$config_file" -Sy $CONFIRM ${packages//,/ } ;;
+            remove) $USE_AUR --config "$config_file" -R $CONFIRM ${packages//,/ } ;;
+            update) $USE_AUR --config "$config_file" -Syu $CONFIRM ;;
         esac
     fi
 
