@@ -1,4 +1,4 @@
-# public-shell
+# utility_scripts
 
 * no dependencies
 * works for both bash and zsh
