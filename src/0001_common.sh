@@ -348,10 +348,19 @@ create_temp() {
     local suffix="${3:-''}"
     local temp_path=""
 
+
     if [[ "$type" == "file" ]]; then
-        temp_path=$(mktemp --suffix $suffix)
+	if ! [[ "$suffix" == '' ]]; then
+           temp_path=$(mktemp --suffix $suffix)
+	else
+           temp_path=$(mktemp)
+	fi
     elif [[ "$type" == "dir" ]]; then
-        temp_path=$(mktemp -d --suffix $suffix)
+	if ! [[ "$suffix" == '' ]]; then
+           temp_path=$(mktemp -d --suffix $suffix)
+	else
+           temp_path=$(mktemp -d)
+	fi
     else
         echo "Invalid type specified. Use 'file' or 'dir'."
         return 1
