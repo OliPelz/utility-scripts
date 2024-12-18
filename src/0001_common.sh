@@ -584,6 +584,51 @@ can_use_sudo() {
     return $?
 }
 
+is_poetry_env() {
+    : '
+      Check Poetry Environment
 
+      ShortDesc: Test if the current shell session is running inside a Poetry-managed virtual environment.
+
+      Description:
+      This function checks whether the current Python environment is managed by Poetry. 
+      It performs the check using two methods:
+      1. Verifying if the `POETRY_ACTIVE` environment variable is set.
+      2. Comparing the current Python executable path with the Poetry environment path.
+
+      Parameters:
+      None
+
+      Returns:
+      - 0: The current session is running inside a Poetry virtual environment.
+      - 1: The current session is not running inside a Poetry virtual environment.
+
+      Example usage:
+      if is_poetry_env; then
+          echo "Running inside a Poetry environment"
+      else
+          echo "Not running inside a Poetry environment"
+      fi
+    '
+    # Check if the POETRY_ACTIVE variable is set
+    if [ "$POETRY_ACTIVE" == "1" ]; then
+        echo "Running in a Poetry environment"
+        return 0
+    fi
+
+    # Check the Poetry environment path
+    poetry_env_path=$(poetry env info --path 2>/dev/null)
+    if [ $? -eq 0 ]; then
+        current_python=$(which python)
+        # Check if the current Python is within the Poetry environment
+        if [[ "$current_python" == "$poetry_env_path"* ]]; then
+            echo "Running in a Poetry environment"
+            return 0
+        fi
+    fi
+
+    echo "Not running in a Poetry environment"
+    return 1
+}
 
 
