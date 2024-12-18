@@ -662,17 +662,24 @@ return 1
 fi
 local parsed_output
 parsed_output=$(yq -r "$parse_string" <(grep -v '^#' "$input_file") 2>/dev/null)
-if [[ $? -ne 0 ]]; then
-log_error "Failed to parse YAML file."
+local yq_exit_code=$?
+if [[ $yq_exit_code -ne 0 ]]; then
+log_error "Failed to parse YAML file: 'yq' command returned exit code $yq_exit_code."
 return 1
 fi
 case "$output_mode" in
 inline)
-echo "$parsed_output" > "$input_file"
+echo "$parsed_output" > "$input_file" || {
+log_error "Error: Unable to overwrite file '$input_file'."
+return 1
+}
 ;;
 outfile)
 if [[ -n "$outfile_path" ]]; then
-echo "$parsed_output" > "$outfile_path"
+echo "$parsed_output" > "$outfile_path" || {
+log_error "Error: Unable to write to file '$outfile_path'."
+return 1
+}
 else
 log_error "Error: Outfile path not specified."
 return 1
@@ -683,7 +690,7 @@ echo "$parsed_output"
 ;;
 esac
 return 0
-}
+}#!/bin/bash
 function log_proxy_state {
 if test_env_variable_defined USE_PROXY; then
 log_info "USE_PROXY is set, so will use a proxy"
