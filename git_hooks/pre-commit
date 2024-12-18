@@ -5,6 +5,13 @@
 # Run 'make compile' before each commit
 make compile
 
+# Check if there are any changes
+if ! git diff --quiet; then
+    echo "Files were modified by the pre-commit hook. Adding changes to the SAME commit..."
+    git add -u # Add updated files
+    git add .  # Add new files if applicable
+fi
+
 # Check the exit status of make compile
 if [ $? -ne 0 ]; then
     echo "Pre-commit hook failed: 'make compile' encountered an error."
