@@ -43,8 +43,11 @@ parse_yaml() {
 
     # Remove comments and parse the YAML file with `yq`
     parsed_output=$(yq -r "$parse_string" <(grep -v '^#' "$input_file") 2>/dev/null)
-    if [[ $? -ne 0 ]]; then
-        log_error "Failed to parse YAML file."
+    local yq_exit_code=$?
+
+    # Check for `yq` command errors
+    if [[ $yq_exit_code -ne 0 ]]; then
+        log_error "Failed to parse YAML file: 'yq' command returned exit code $yq_exit_code."
         return 1
     fi
 
@@ -52,12 +55,18 @@ parse_yaml() {
     case "$output_mode" in
         inline)
             # Inline mode: overwrite the input file with parsed output
-            echo "$parsed_output" > "$input_file"
+            echo "$parsed_output" > "$input_file" || {
+                log_error "Error: Unable to overwrite file '$input_file'."
+                return 1
+            }
             ;;
         outfile)
             # Outfile mode: save to the specified outfile path
             if [[ -n "$outfile_path" ]]; then
-                echo "$parsed_output" > "$outfile_path"
+                echo "$parsed_output" > "$outfile_path" || {
+                    log_error "Error: Unable to write to file '$outfile_path'."
+                    return 1
+                }
             else
                 log_error "Error: Outfile path not specified."
                 return 1
@@ -71,4 +80,3 @@ parse_yaml() {
 
     return 0
 }
-
