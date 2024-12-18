@@ -23,7 +23,7 @@ NOTES:
 to first time init run
 
 ```bash
-./__init.sh
+./__makefile_init_run_only_once.sh
 ```
 
 if you want to compile without former init run
@@ -33,3 +33,12 @@ if you want to compile without former init run
 ```
 
 Note: after running `make clean` you need to run `./__init.sh` again
+
+Note: to compile you need preprocess python package, install with 
+
+```bashh
+$ pipx install preprocess
+$ export PATH=/home/olip/.local/bin:$PATH
+
+```
+

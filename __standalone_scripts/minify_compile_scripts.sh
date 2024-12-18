@@ -182,7 +182,7 @@ main() {
 		minify_shell_code "${prepared_lines_file}" "${minified_lines_file}"
 
     # Write the output to the final output file
-		final_output_file="${output_full_base_path}.${shell_variant@L}"
+		final_output_file="${output_full_base_path}.${shell_variant,,}"
 
 		mv "${minified_lines_file}" "${final_output_file}"
 

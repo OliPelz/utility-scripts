@@ -26,9 +26,14 @@ exit 0
 }
 get_full_path_script_executed_in() {
 if [ -n "$BASH_VERSION" ]; then
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
 script_path="${BASH_SOURCE[0]}"
+else
+script_path="${BASH_SOURCE[1]}"
+fi
 elif [ -n "$ZSH_VERSION" ]; then
-script_path="${(%):-%x}"
+echo "TODO: NOT IMPLEMENTED YET, SEEMS TO BE DIFFICULT TO MAKE IT WORK FOR sourced, executed and direct call"
+return 1
 else
 echo "Unsupported shell"
 return 1
@@ -97,9 +102,17 @@ local delete_on_exit="${2:-true}"
 local suffix="${3:-''}"
 local temp_path=""
 if [[ "$type" == "file" ]]; then
+if ! [[ "$suffix" == '' ]]; then
 temp_path=$(mktemp --suffix $suffix)
+else
+temp_path=$(mktemp)
+fi
 elif [[ "$type" == "dir" ]]; then
+if ! [[ "$suffix" == '' ]]; then
 temp_path=$(mktemp -d --suffix $suffix)
+else
+temp_path=$(mktemp -d)
+fi
 else
 echo "Invalid type specified. Use 'file' or 'dir'."
 return 1
@@ -184,6 +197,22 @@ else
 sudo -n true 2>/dev/null
 fi
 return $?
+}
+is_poetry_env() {
+if [ "$POETRY_ACTIVE" == "1" ]; then
+echo "Running in a Poetry environment"
+return 0
+fi
+poetry_env_path=$(poetry env info --path 2>/dev/null)
+if [ $? -eq 0 ]; then
+current_python=$(which python)
+if [[ "$current_python" == "$poetry_env_path"* ]]; then
+echo "Running in a Poetry environment"
+return 0
+fi
+fi
+echo "Not running in a Poetry environment"
+return 1
 }
 if [ -n "$BASH_VERSION" ]; then
 declare -A bash_colors
