@@ -690,7 +690,7 @@ echo "$parsed_output"
 ;;
 esac
 return 0
-}#!/bin/bash
+}
 function log_proxy_state {
 if test_env_variable_defined USE_PROXY; then
 log_info "USE_PROXY is set, so will use a proxy"
