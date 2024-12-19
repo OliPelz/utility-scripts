@@ -214,6 +214,22 @@ fi
 echo "Not running in a Poetry environment"
 return 1
 }
+prompt_yes_no() {
+local message=$1
+local yn
+while true; do
+read -p "${message}? " yn
+case $yn in
+[Yy]* )
+return 0
+;;
+[Nn]* )
+return 1
+;;
+* ) echo "Please answer yes or no." ;;
+esac
+done
+}
 if [ -n "$BASH_VERSION" ]; then
 declare -A bash_colors
 bash_colors["black"]="\033[0;30m"
