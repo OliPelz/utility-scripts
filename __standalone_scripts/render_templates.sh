@@ -9,6 +9,7 @@ ShortDesc: A script for rendering templates using environment variables, support
 
 Description:
 This script processes a directory of template files, replacing `{{var_name}}` placeholders with corresponding environment variable values defined in a separate file. It also preserves any literal `${var_name}` placeholders in the templates by escaping and restoring them during processing.
+IMPORTANT: the script only considers files ending with .j2 !
 
 Parameters:
 --template-dir <path>: The directory containing the template files to process.
