@@ -631,4 +631,37 @@ is_poetry_env() {
     return 1
 }
 
+## PROMPT prompt for a yes/no question
+prompt_yes_no() {
+    : '
+        Yes No
+
+        ShortDesc: Prompts the user for a yes or no answer.
+
+        Description:
+        This function repeatedly asks the user for a yes or no answer.
+        It returns 0 for yes and 1 for no.
+
+        Parameters:
+        - $1: The message to display to the user.
+
+        Returns:
+        - 0: User answered yes.
+        - 1: User answered no.
+    '
+    local message=$1
+    local yn
+    while true; do
+        read -p "${message}? " yn
+        case $yn in
+            [Yy]* )
+                return 0
+                ;;
+            [Nn]* )
+                return 1
+                ;;
+            * ) echo "Please answer yes or no." ;;
+        esac
+    done
+}
 
