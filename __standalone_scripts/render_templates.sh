@@ -140,10 +140,11 @@ fi
 
 
 # Process templates
-find "$TEMPLATE_DIR" -type f | while read -r template; do
+find "$TEMPLATE_DIR" -type f -name '*.j2' | while read -r template; do
     # Define output path
     relative_path="${template#$TEMPLATE_DIR/}"
-    output_path="$OUTPUT_DIR/$relative_path"
+    # %.j2 removes the .j2 suffix from the filename
+    output_path="$OUTPUT_DIR/${relative_path%.j2}"
 
     # Create output subdirectory if necessary
     mkdir -p "$(dirname "$output_path")"
