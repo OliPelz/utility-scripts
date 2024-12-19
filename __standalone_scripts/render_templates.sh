@@ -13,7 +13,8 @@ This script processes a directory of template files, replacing `{{var_name}}` pl
 Parameters:
 --template-dir <path>: The directory containing the template files to process.
 --output-dir <path>: The base directory where rendered templates will be saved.
---env-file <path>: A file containing environment variable definitions for rendering templates.
+--env-file <path>: OPTIONAL! A file containing environment variable definitions for rendering templates. 
+                   If not provided, use the environment from the process calling this script
 --help: Display usage information and exit.
 
 Behavior:
@@ -72,12 +73,12 @@ bash -x ./render_templates.sh --template-dir template_dir --output-dir output_di
 
 # Function to display usage
 usage() {
-    echo "Usage: $0 --template-dir TEMPLATE_DIR --output-dir OUTPUT_DIR --env-file ENV_FILE"
+    echo "Usage: $0 --template-dir TEMPLATE_DIR --output-dir OUTPUT_DIR [--env-file ENV_FILE]"
     echo ""
     echo "Options:"
     echo "  --template-dir   Directory containing template files."
     echo "  --output-dir     Directory for rendered files."
-    echo "  --env-file       File with environment variable definitions."
+    echo "  --env-file       Optional: File with environment variable definitions."
     echo "  --help           Display usage information."
     exit 1
 }
@@ -112,7 +113,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Validate required parameters
-if [[ -z "$TEMPLATE_DIR" || -z "$OUTPUT_DIR" || -z "$ENV_FILE" ]]; then
+if [[ -z "$TEMPLATE_DIR" || -z "$OUTPUT_DIR" ]]; then
     echo "Error: Missing required parameters."
     usage
 fi
@@ -123,16 +124,20 @@ if [[ ! -d "$TEMPLATE_DIR" ]]; then
     exit 1
 fi
 
-# Validate environment file
-if [[ ! -f "$ENV_FILE" ]]; then
-    echo "Error: Environment file '$ENV_FILE' does not exist."
-    exit 1
+if [[ -n "$ENV_FILE" ]]; then
+    # Validate and load environment file if provided
+    if [[ ! -f "$ENV_FILE" ]]; then
+        echo "Error: Environment file '$ENV_FILE' does not exist."
+        exit 1
+    fi
+    echo "Loading environment variables from '$ENV_FILE'..."
+    set -a
+    source "$ENV_FILE"
+    set +a
+else
+    echo "Using current process environment variables."
 fi
 
-# Load environment variables
-set -a
-source "$ENV_FILE"
-set +a
 
 # Process templates
 find "$TEMPLATE_DIR" -type f | while read -r template; do
