@@ -71,6 +71,12 @@ Advanced Usage:
 bash -x ./render_templates.sh --template-dir template_dir --output-dir output_dir --env-file data.env
 '
 
+# we can use __{{VARIABLE_NAME}}__ for dir names which will be substituted by variable names
+# Function to replace __{{VARIABLE_NAME}}__ in directory names
+process_directory_name() {
+    local dir="$1"
+    echo "$dir" | sed -E "s/__\{\{([a-zA-Z0-9_]+)\}\}__/${!1}/g"
+}
 
 # Function to display usage
 usage() {
@@ -139,20 +145,20 @@ else
     echo "Using current process environment variables."
 fi
 
-
 # Process templates
 find "$TEMPLATE_DIR" -type f -name '*.j2' | while read -r template; do
-    # Define output path
+    # Define relative path
     relative_path="${template#$TEMPLATE_DIR/}"
-    # %.j2 removes the .j2 suffix from the filename
-    output_path="$OUTPUT_DIR/${relative_path%.j2}"
+
+    # Process directory names for variables
+    relative_dir="$(dirname "$relative_path")"
+    processed_dir="$(process_directory_name "$relative_dir")"
+    output_path="$OUTPUT_DIR/$processed_dir/$(basename "${relative_path%.j2}")"
 
     # Create output subdirectory if necessary
     mkdir -p "$(dirname "$output_path")"
 
-    # Preprocess placeholders:
-    # 1. Replace {{var_name}} with ${var_name}
-    # 2. Escape literal ${var_name} to prevent replacement
+    # Preprocess placeholders, e.g. to replace dir names
     sed -E '
         s/\$\{([a-zA-Z0-9_]+)\}/__LITERAL_OPEN__\1__LITERAL_CLOSE__/g;
         s/\{\{([a-zA-Z0-9_]+)\}\}/${\1}/g
