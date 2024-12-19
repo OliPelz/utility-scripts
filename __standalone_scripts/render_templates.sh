@@ -76,7 +76,8 @@ bash -x ./render_templates.sh --template-dir template_dir --output-dir output_di
 # Function to replace __{{VARIABLE_NAME}}__ in directory names
 process_directory_name() {
     local dir="$1"
-    echo "$dir" | sed -E "s/__\{\{([a-zA-Z0-9_]+)\}\}__/${!1}/g"
+    # Replace __{{VARIABLE_NAME}}__ with the value of the corresponding variable
+    echo "$dir" | sed -E "s/__\{\{([a-zA-Z0-9_]+)\}\}__/$(eval echo \${\1})/g"
 }
 
 # Function to display usage
