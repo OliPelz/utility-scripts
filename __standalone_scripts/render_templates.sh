@@ -11,6 +11,7 @@ Description:
 This script processes a directory of template files, replacing `{{var_name}}` placeholders with corresponding environment variable values. It also supports renaming directories containing placeholders in their names.
 IMPORTANT: Only files ending with `.j2` are processed!
 IMPORTANT2: Directory names with placeholders like `__{{VAR_NAME}}__` are renamed based on the variable value.
+IMPORTANT3: you now can define a template like dotfile-myfilename.txt.j2 and it will be rendered to .myfilename.txt
 
 Parameters:
 --template-dir <path>: The directory containing the template files to process.
@@ -105,7 +106,7 @@ fi
 # Function to process and rename placeholders in directory/file names
 process_placeholders() {
     local input="$1"
-    echo "$input" | sed -E 's/__\{\{([a-zA-Z0-9_]+)\}\}__/${\1}/g' | envsubst
+    echo "$input" | sed -E 's/__\{\{([a-zA-Z0-9_]+)\}\}__/${\1}/g; s/^dotfile-/\./' | envsubst
 }
 
 # Copy and process directory structure
