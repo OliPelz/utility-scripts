@@ -144,20 +144,26 @@ fc_log_info "Processing templates..."
 find "$TEMPLATE_DIR" -type f -name '*.j2' | while read -r template; do
     relative_path="${template#$TEMPLATE_DIR/}"
 
-    # Transform 'dotfile-' prefix to '.' in the filename
+    # Check if the file has a 'dotfile-' prefix and transform it
     base_name=$(basename "$relative_path")
     dir_name=$(dirname "$relative_path")
 
     if [[ "$base_name" == dotfile-* ]]; then
+        # Handle 'dotfile-' prefixed filenames
         transformed_filename=".$(basename "${base_name#dotfile-}" .j2)"
         relative_path="$dir_name/$transformed_filename"
         fc_log_info "Transformed dotfile prefix: '$base_name' -> '$transformed_filename'"
+    else
+        # Remove the `.j2` extension for non-dotfile-prefixed files
+        transformed_filename=$(basename "${base_name%.j2}")
+        relative_path="$dir_name/$transformed_filename"
     fi
 
-    # Process placeholders in the remaining relative path
+    # Process placeholders in the relative path
     processed_path=$(process_placeholders "$relative_path")
     output_path="$OUTPUT_DIR/$processed_path"
 
+    # Log and render the template
     fc_log_info "Rendering template: $template -> $output_path"
     mkdir -p "$(dirname "$output_path")"
 
@@ -171,7 +177,6 @@ find "$TEMPLATE_DIR" -type f -name '*.j2' | while read -r template; do
         s/__LITERAL_CLOSE__/}/g
     ' > "$output_path"
 done
-
 
 
 fc_log_info "Templates have been successfully rendered to '$OUTPUT_DIR'."
