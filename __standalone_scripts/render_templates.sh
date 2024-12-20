@@ -106,8 +106,25 @@ fi
 # Function to process and rename placeholders in directory/file names
 process_placeholders() {
     local input="$1"
-    echo "$input" | sed -E 's/__\{\{([a-zA-Z0-9_]+)\}\}__/${\1}/g; s/^dotfile-/\./' | envsubst
+    local transformed
+
+    # Replace placeholders and handle the special `dotfile-` prefix
+    transformed=$(echo "$input" | sed -E 's/__\{\{([a-zA-Z0-9_]+)\}\}__/${\1}/g; s/^dotfile-/\./' | envsubst)
+
+    # Log transformations for dotfile- prefixed files
+    if [[ "$input" == dotfile-* ]]; then
+        fc_log_info "Transformed dotfile prefix: '$input' -> '$transformed'"
+    fi
+
+    # Log transformations for directory placeholders
+    if [[ "$input" =~ __\{\{.*\}\}__ ]]; then
+        fc_log_info "Transformed placeholder in directory: '$input' -> '$transformed'"
+    fi
+
+    echo "$transformed"
 }
+
+
 
 # Copy and process directory structure
 fc_log_info "Copying and processing directories from '$TEMPLATE_DIR' to '$OUTPUT_DIR'..."
