@@ -12,6 +12,7 @@ This script processes a directory of template files, replacing `{{var_name}}` pl
 IMPORTANT: Only files ending with `.j2` are processed!
 IMPORTANT2: Directory names with placeholders like `__{{VAR_NAME}}__` are renamed based on the variable value.
 IMPORTANT3: you now can define a template like dotfile-myfilename.txt.j2 and it will be rendered to .myfilename.txt
+IMPORTANT4: Files with .ut extension are copied to the output directory without any modifications.
 
 Parameters:
 --template-dir <path>: The directory containing the template files to process.
@@ -138,6 +139,16 @@ find "$TEMPLATE_DIR" -mindepth 1 -type d | while read -r dir; do
     mkdir -p "$output_dir"
 done
 
+# Process `.ut` files (copy untouched)
+fc_log_info "Copying .ut files without modification..."
+find "$TEMPLATE_DIR" -type f -name '*.ut' | while read -r ut_file; do
+    relative_path="${ut_file#$TEMPLATE_DIR/}"
+    output_path="$OUTPUT_DIR/$relative_path"
+
+    fc_log_info "Copying: $ut_file -> $output_path"
+    mkdir -p "$(dirname "$output_path")"
+    cp "$ut_file" "$output_path"
+done
 
 # Process templates
 fc_log_info "Processing templates..."
