@@ -184,7 +184,7 @@ find "$TEMPLATE_DIR" -type f -name '*.j2' | while read -r template; do
     ' "$template" |
     envsubst |
     sed -E '
-        s/__LITERAL_OPEN__/\\${/g;
+        s/__LITERAL_OPEN__/\${/g;
         s/__LITERAL_CLOSE__/}/g
     ' > "$output_path"
 done
