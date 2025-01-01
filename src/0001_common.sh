@@ -665,3 +665,142 @@ prompt_yes_no() {
     done
 }
 
+is_array_defined_nonempty() {
+    : '
+    Test Array State (Defined, Empty, or Both)
+
+    ShortDesc: This function checks if a specified array is defined, empty, or both.
+
+    Description:
+    This function takes the name of an array as the first argument and an optional mode
+    ("defined" or "empty") as the second argument. By default, it checks if the array is defined
+    and not empty. If "defined" is provided, it checks if the array is defined, regardless of its content.
+    If "empty" is provided, it checks if the array is empty, regardless of whether it is defined.
+
+    Parameters:
+    - ARRAY_NAME: The name of the array to check.
+    - MODE (optional): The mode to check ("defined", "empty", or default).
+
+    Returns:
+    - 0: Array exists and is not empty.
+    - 1: Array exists but is empty.
+    - 2: Array does not exist.
+
+    Example Usages:
+        array=("a" "b")
+        if is_array_defined_nonempty "array"; then
+            echo "Array exists and is not empty."
+        fi
+        # Output: Array exists and is not empty.
+    '
+
+    local ARRAY_NAME="$1"
+    local MODE="${2:-both}"
+
+    case "$MODE" in
+        "defined")
+            # Check if the array is defined
+            if [[ "$(declare -p "$ARRAY_NAME" 2>/dev/null)" =~ "declare -a" ]]; then
+                return 0  # Array is defined
+            else
+                return 2  # Array is not defined
+            fi
+            ;;
+        "empty")
+            # Check if the array is empty
+            if [[ "$(declare -p "$ARRAY_NAME" 2>/dev/null)" =~ "declare -a" ]]; then
+                local -n array_ref="$ARRAY_NAME"
+                if [[ ${#array_ref[@]} -eq 0 ]]; then
+                    return 1  # Array is empty
+                else
+                    return 0  # Array is not empty
+                fi
+            else
+                return 2  # Array is not defined
+            fi
+            ;;
+        "both" | *)
+            # Default mode: Check if the array is defined and not empty
+            if [[ "$(declare -p "$ARRAY_NAME" 2>/dev/null)" =~ "declare -a" ]]; then
+                local -n array_ref="$ARRAY_NAME"
+                if [[ ${#array_ref[@]} -gt 0 ]]; then
+                    return 0  # Array is defined and not empty
+                else
+                    return 1  # Array is empty
+                fi
+            else
+                return 2  # Array is not defined
+            fi
+            ;;
+    esac
+}
+
+is_dict_defined_nonempty() {
+    : '
+    Test Dictionary State (Defined, Empty, or Both)
+
+    ShortDesc: This function checks if a specified dictionary is defined, empty, or both.
+
+    Description:
+    This function takes the name of a dictionary as the first argument and an optional mode
+    ("defined" or "empty") as the second argument. By default, it checks if the dictionary is defined
+    and not empty. If "defined" is provided, it checks if the dictionary is defined, regardless of its content.
+    If "empty" is provided, it checks if the dictionary is empty, regardless of whether it is defined.
+
+    Parameters:
+    - DICT_NAME: The name of the dictionary to check.
+    - MODE (optional): The mode to check ("defined", "empty", or "both").
+
+    Returns:
+    - 0: Dictionary exists and is not empty.
+    - 1: Dictionary exists but is empty.
+    - 2: Dictionary does not exist.
+
+    Example Usages:
+        declare -A my_dict=([key1]="value1")
+        if is_dict_defined_nonempty "my_dict"; then
+            echo "Dictionary exists and is not empty."
+        fi
+        # Output: Dictionary exists and is not empty.
+    '
+
+    local DICT_NAME="$1"
+    local MODE="${2:-both}"
+
+    case "$MODE" in
+        "defined")
+            # Check if the dictionary is defined
+            if [[ "$(declare -p "$DICT_NAME" 2>/dev/null)" =~ "declare -A" ]]; then
+                return 0  # Dictionary is defined
+            else
+                return 2  # Dictionary is not defined
+            fi
+            ;;
+        "empty")
+            # Check if the dictionary is empty
+            if [[ "$(declare -p "$DICT_NAME" 2>/dev/null)" =~ "declare -A" ]]; then
+                local -n dict_ref="$DICT_NAME"
+                if [[ ${#dict_ref[@]} -eq 0 ]]; then
+                    return 1  # Dictionary is empty
+                else
+                    return 0  # Dictionary is not empty
+                fi
+            else
+                return 2  # Dictionary is not defined
+            fi
+            ;;
+        "both" | *)
+            # Default mode: Check if the dictionary is defined and not empty
+            if [[ "$(declare -p "$DICT_NAME" 2>/dev/null)" =~ "declare -A" ]]; then
+                local -n dict_ref="$DICT_NAME"
+                if [[ ${#dict_ref[@]} -gt 0 ]]; then
+                    return 0  # Dictionary is defined and not empty
+                else
+                    return 1  # Dictionary is empty
+                fi
+            else
+                return 2  # Dictionary is not defined
+            fi
+            ;;
+    esac
+}
