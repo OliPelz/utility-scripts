@@ -230,6 +230,80 @@ return 1
 esac
 done
 }
+is_array_defined_nonempty() {
+local ARRAY_NAME="$1"
+local MODE="${2:-both}"
+case "$MODE" in
+"defined")
+if [[ "$(declare -p "$ARRAY_NAME" 2>/dev/null)" =~ "declare -a" ]]; then
+return 0
+else
+return 2
+fi
+;;
+"empty")
+if [[ "$(declare -p "$ARRAY_NAME" 2>/dev/null)" =~ "declare -a" ]]; then
+local -n array_ref="$ARRAY_NAME"
+if [[ ${#array_ref[@]} -eq 0 ]]; then
+return 1
+else
+return 0
+fi
+else
+return 2
+fi
+;;
+"both" | *)
+if [[ "$(declare -p "$ARRAY_NAME" 2>/dev/null)" =~ "declare -a" ]]; then
+local -n array_ref="$ARRAY_NAME"
+if [[ ${#array_ref[@]} -gt 0 ]]; then
+return 0
+else
+return 1
+fi
+else
+return 2
+fi
+;;
+esac
+}
+is_dict_defined_nonempty() {
+local DICT_NAME="$1"
+local MODE="${2:-both}"
+case "$MODE" in
+"defined")
+if [[ "$(declare -p "$DICT_NAME" 2>/dev/null)" =~ "declare -A" ]]; then
+return 0
+else
+return 2
+fi
+;;
+"empty")
+if [[ "$(declare -p "$DICT_NAME" 2>/dev/null)" =~ "declare -A" ]]; then
+local -n dict_ref="$DICT_NAME"
+if [[ ${#dict_ref[@]} -eq 0 ]]; then
+return 1
+else
+return 0
+fi
+else
+return 2
+fi
+;;
+"both" | *)
+if [[ "$(declare -p "$DICT_NAME" 2>/dev/null)" =~ "declare -A" ]]; then
+local -n dict_ref="$DICT_NAME"
+if [[ ${#dict_ref[@]} -gt 0 ]]; then
+return 0
+else
+return 1
+fi
+else
+return 2
+fi
+;;
+esac
+}
 if [ -n "$BASH_VERSION" ]; then
 declare -A bash_colors
 bash_colors["black"]="\033[0;30m"
