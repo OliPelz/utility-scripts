@@ -804,3 +804,73 @@ is_dict_defined_nonempty() {
             ;;
     esac
 }
+
+install_missing() {
+    : '
+    Install Package for Missing Command
+
+    ShortDesc: Installs a package if a specified command is not found on the system.
+
+    Description:
+    This function checks if a given command is installed. If the command is not found,
+    it attempts to detect the Linux distribution and install the corresponding package
+    using the appropriate package manager. By default, it assumes the package name
+    matches the command name, but a different package name can be specified as an
+    optional parameter.
+
+    Parameters:
+    - command_name: The name of the command to check (e.g., "curl", "git").
+    - package_name (optional): The name of the package to install (default: same as command_name).
+
+    Returns:
+    - 0: Success (the package was installed successfully or already present).
+    - 1: Failure (the package could not be installed or unsupported distribution).
+
+    Example Usage:
+    install_missing "curl"             # Installs "curl" if not found.
+    install_missing "node" "nodejs"   # Installs "nodejs" if "node" command is not found.
+    '
+
+    local command_name="$1"
+    local package_name="${2:-$command_name}"
+
+    # Check if the command is already installed
+    if check_command_installed "$command_name"; then
+        echo "$command_name is already installed."
+        return 0
+    fi
+
+    # Detect the Linux distribution
+    local distro
+    distro=$(detect_distribution) || {
+        echo "Error: Unable to detect Linux distribution."
+        return 1
+    }
+
+    # Install the package based on the distribution
+    case "$distro" in
+        "RHEL")
+            sudo dnf install -y "$package_name" || sudo yum install -y "$package_name"
+            ;;
+        "ARCH")
+            sudo pacman -S --noconfirm "$package_name"
+            ;;
+        "DEBIAN")
+            sudo apt update && sudo apt install -y "$package_name"
+            ;;
+        *)
+            echo "Error: Unsupported distribution ($distro)."
+            return 1
+            ;;
+    esac
+
+    # Verify installation
+    if check_command_installed "$command_name"; then
+        echo "$command_name has been installed successfully."
+        return 0
+    else
+        echo "Error: Failed to install $command_name."
+        return 1
+    fi
+}
+

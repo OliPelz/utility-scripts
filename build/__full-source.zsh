@@ -304,6 +304,41 @@ fi
 ;;
 esac
 }
+install_missing() {
+local command_name="$1"
+local package_name="${2:-$command_name}"
+if check_command_installed "$command_name"; then
+echo "$command_name is already installed."
+return 0
+fi
+local distro
+distro=$(detect_distribution) || {
+echo "Error: Unable to detect Linux distribution."
+return 1
+}
+case "$distro" in
+"RHEL")
+sudo dnf install -y "$package_name" || sudo yum install -y "$package_name"
+;;
+"ARCH")
+sudo pacman -S --noconfirm "$package_name"
+;;
+"DEBIAN")
+sudo apt update && sudo apt install -y "$package_name"
+;;
+*)
+echo "Error: Unsupported distribution ($distro)."
+return 1
+;;
+esac
+if check_command_installed "$command_name"; then
+echo "$command_name has been installed successfully."
+return 0
+else
+echo "Error: Failed to install $command_name."
+return 1
+fi
+}
 if [ -n "$BASH_VERSION" ]; then
 declare -A bash_colors
 bash_colors["black"]="\033[0;30m"
