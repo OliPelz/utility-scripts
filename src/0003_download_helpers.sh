@@ -179,3 +179,134 @@ download_directory_from_github() {
         return 1
     fi
 }
+
+download_if_newer_or_different_size() {
+	: '
+	    Download File Only if Newer or Different Size
+
+	    ShortDesc: Downloads a file from a given URL only if it is newer or has a different size than the local file.
+
+	    Description:
+	    This function checks whether a file at a given URL is newer or has a different size compared to a local file. 
+	    It uses HTTP headers such as "Content-Length" and "Last-Modified" for comparison and downloads the file only 
+	    when necessary. It also validates the download and provides detailed error handling.
+
+	    Parameters:
+	    - url (required): The URL of the file to download.
+	    - output_file (required): The path to the local file where the downloaded content will be saved.
+
+	    Behavior:
+	    1. Checks the HTTP response code of the URL to ensure it is 200 OK.
+	    2. Fetches "Content-Length" and "Last-Modified" headers from the URL.
+	    3. Compares the size of the local file with "Content-Length".
+	    4. Compares the modification date of the local file with "Last-Modified" (if available).
+	    5. Downloads the file if:
+		- The local file does not exist.
+		- The file size differs.
+		- The remote file is newer (based on "Last-Modified").
+	    6. Handles errors gracefully, including connectivity issues, missing headers, and invalid downloads.
+
+	    Returns:
+	    - 0: Success (file is downloaded or already up-to-date).
+	    - 3: Failed to fetch headers from the URL.
+	    - 4: Non-200 HTTP response.
+	    - 5: Missing "Content-Length" header.
+	    - 6: Download failed.
+
+	    Example Usages:
+	    
+	    1. Download if newer or different size:
+
+		download_if_newer_or_different_size "https://example.com/file.zip" "/path/to/file.zip"
+
+	    2. Handle missing file:
+
+		# If the file does not exist locally, it will be downloaded.
+		download_if_newer_or_different_size "https://example.com/missing.zip" "/path/to/missing.zip"
+
+	    3. Debugging failed downloads:
+
+		# Use verbose output to debug:
+		bash -x ./your_script.sh
+
+	'
+    local url="$1"
+    local output_file="$2"
+
+    echo "Checking $url for updates..."
+
+    # Use curl to fetch headers
+    local headers temp_file
+    temp_file=$(mktemp)
+
+    curl -sI "$url" >"$temp_file" || {
+        echo "Error: Failed to fetch headers for $url. Please check your connection or the URL."
+        rm -f "$temp_file"
+        return 3
+    }
+
+    # Extract useful headers
+    local remote_last_modified remote_size http_status
+    http_status=$(awk '/^HTTP/{print $2}' "$temp_file")
+    remote_last_modified=$(awk -F': ' '/^Last-Modified/{print $2}' "$temp_file" | tr -d '\r')
+    remote_size=$(awk -F': ' '/^Content-Length/{print $2}' "$temp_file" | tr -d '\r')
+
+    # Check HTTP response code
+    if [[ "$http_status" != "200" ]]; then
+        echo "Error: HTTP response for $url is $http_status. Expected 200 OK."
+        rm -f "$temp_file"
+        return 4
+    fi
+
+    # If remote size is missing
+    if [[ -z "$remote_size" ]]; then
+        echo "Warning: Content-Length header missing for $url. Downloading file anyway."
+        curl -L -o "$output_file" "$url" || {
+            echo "Error: Failed to download $url."
+            rm -f "$temp_file"
+            return 5
+        }
+        echo "Download complete: $output_file"
+        rm -f "$temp_file"
+        return 0
+    fi
+
+    # Check if file exists locally
+    if [[ -f "$output_file" ]]; then
+        local local_size local_last_modified
+        local_size=$(stat --format="%s" "$output_file")
+        local_last_modified=$(stat --format="%Y" "$output_file")
+
+        # Compare sizes
+        if [[ "$local_size" -ne "$remote_size" ]]; then
+            echo "File size mismatch: local=$local_size, remote=$remote_size. Downloading updated file..."
+        elif [[ -n "$remote_last_modified" ]]; then
+            # Compare last modified time
+            local remote_unix_time
+            remote_unix_time=$(date -d "$remote_last_modified" +%s 2>/dev/null)
+
+            if [[ "$local_last_modified" -lt "$remote_unix_time" ]]; then
+                echo "Remote file is newer. Downloading updated file..."
+            else
+                echo "Local file is up-to-date."
+                rm -f "$temp_file"
+                return 0
+            fi
+        else
+            echo "Warning: No Last-Modified header available for comparison. Downloading file anyway."
+        fi
+    else
+        echo "Local file does not exist. Downloading..."
+    fi
+
+    # Download the file
+    curl -L -o "$output_file" "$url" || {
+        echo "Error: Failed to download $url."
+        rm -f "$temp_file"
+        return 6
+    }
+
+    echo "Download complete: $output_file"
+    rm -f "$temp_file"
+    return 0
+}

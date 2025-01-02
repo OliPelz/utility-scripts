@@ -512,6 +512,68 @@ echo "Failed to download the directory."
 return 1
 fi
 }
+download_if_newer_or_different_size() {
+local url="$1"
+local output_file="$2"
+echo "Checking $url for updates..."
+local headers temp_file
+temp_file=$(mktemp)
+curl -sI "$url" >"$temp_file" || {
+echo "Error: Failed to fetch headers for $url. Please check your connection or the URL."
+rm -f "$temp_file"
+return 3
+}
+local remote_last_modified remote_size http_status
+http_status=$(awk '/^HTTP/{print $2}' "$temp_file")
+remote_last_modified=$(awk -F': ' '/^Last-Modified/{print $2}' "$temp_file" | tr -d '\r')
+remote_size=$(awk -F': ' '/^Content-Length/{print $2}' "$temp_file" | tr -d '\r')
+if [[ "$http_status" != "200" ]]; then
+echo "Error: HTTP response for $url is $http_status. Expected 200 OK."
+rm -f "$temp_file"
+return 4
+fi
+if [[ -z "$remote_size" ]]; then
+echo "Warning: Content-Length header missing for $url. Downloading file anyway."
+curl -L -o "$output_file" "$url" || {
+echo "Error: Failed to download $url."
+rm -f "$temp_file"
+return 5
+}
+echo "Download complete: $output_file"
+rm -f "$temp_file"
+return 0
+fi
+if [[ -f "$output_file" ]]; then
+local local_size local_last_modified
+local_size=$(stat --format="%s" "$output_file")
+local_last_modified=$(stat --format="%Y" "$output_file")
+if [[ "$local_size" -ne "$remote_size" ]]; then
+echo "File size mismatch: local=$local_size, remote=$remote_size. Downloading updated file..."
+elif [[ -n "$remote_last_modified" ]]; then
+local remote_unix_time
+remote_unix_time=$(date -d "$remote_last_modified" +%s 2>/dev/null)
+if [[ "$local_last_modified" -lt "$remote_unix_time" ]]; then
+echo "Remote file is newer. Downloading updated file..."
+else
+echo "Local file is up-to-date."
+rm -f "$temp_file"
+return 0
+fi
+else
+echo "Warning: No Last-Modified header available for comparison. Downloading file anyway."
+fi
+else
+echo "Local file does not exist. Downloading..."
+fi
+curl -L -o "$output_file" "$url" || {
+echo "Error: Failed to download $url."
+rm -f "$temp_file"
+return 6
+}
+echo "Download complete: $output_file"
+rm -f "$temp_file"
+return 0
+}
 git_clone_or_pull() {
 local repo_url=""
 local target_dir=""
