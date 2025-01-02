@@ -517,12 +517,14 @@ local repo_url=""
 local target_dir=""
 local add_to_gitignore="false"
 local clean="false"
+local shallow="false"
 while [[ "$#" -gt 0 ]]; do
 case "$1" in
 --repo_url) repo_url="$2"; shift ;;
 --target_dir) target_dir="$2"; shift ;;
 --add_to_gitignore) add_to_gitignore="$2"; shift ;;
 --clean) clean="true" ;;
+--shallow) shallow="true" ;;
 *) echo "Unknown parameter: $1"; return 1 ;;
 esac
 shift
@@ -544,7 +546,11 @@ echo "Pulling latest changes..."
 (cd "$repo_dir" && git pull > /dev/null) || return 1
 else
 echo "Cloning repository '$org_repo_name' into '$repo_dir'..."
+if [ "$shallow" == "true" ]; then
+git clone --depth=1 "$repo_url" "$repo_dir" || return 1
+else
 git clone "$repo_url" "$repo_dir" || return 1
+fi
 fi
 if [ "$add_to_gitignore" == "true" ]; then
 [ -f .gitignore ] && grep -q "^${repo_dir}$" .gitignore || echo "$repo_dir" >> .gitignore

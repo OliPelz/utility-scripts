@@ -17,13 +17,14 @@ git_clone_or_pull() {
         - --add_to_gitignore (optional): A flag ("true" or "false") to determine whether to add the directory name to `.gitignore`.
                                          Defaults to "false".
         - --clean (optional): A flag to clean the repository directory before pulling (defaults to "false").
+        - --shallow (optional): A flag to perform a shallow clone with depth=1 when cloning (defaults to "false").
 
         Returns:
         - 0: Success
         - 1: Failure if the Git commands fail or if invalid parameters are used.
 
         Example Usage:
-        git_clone_or_pull --repo_url "https://github.com/user/repo.git" --target_dir "my_repo" --add_to_gitignore "true" --clean
+        git_clone_or_pull --repo_url "https://github.com/user/repo.git" --target_dir "my_repo" --add_to_gitignore "true" --clean --shallow
     '
 
     # Parameters
@@ -31,6 +32,7 @@ git_clone_or_pull() {
     local target_dir=""
     local add_to_gitignore="false"
     local clean="false"
+    local shallow="false"
 
     # Parse arguments
     while [[ "$#" -gt 0 ]]; do
@@ -39,6 +41,7 @@ git_clone_or_pull() {
             --target_dir) target_dir="$2"; shift ;;
             --add_to_gitignore) add_to_gitignore="$2"; shift ;;
             --clean) clean="true" ;;
+            --shallow) shallow="true" ;;
             *) echo "Unknown parameter: $1"; return 1 ;;
         esac
         shift
@@ -69,7 +72,11 @@ git_clone_or_pull() {
         (cd "$repo_dir" && git pull > /dev/null) || return 1
     else
         echo "Cloning repository '$org_repo_name' into '$repo_dir'..."
-        git clone "$repo_url" "$repo_dir" || return 1
+        if [ "$shallow" == "true" ]; then
+            git clone --depth=1 "$repo_url" "$repo_dir" || return 1
+        else
+            git clone "$repo_url" "$repo_dir" || return 1
+        fi
     fi
 
     # Optionally add the directory name to .gitignore
@@ -79,3 +86,4 @@ git_clone_or_pull() {
 
     return 0
 }
+
