@@ -987,3 +987,65 @@ echo "Invalid action. Use '-e' for encrypt or '-d' for decrypt."
 return 1
 fi
 }
+array_of_dict_parse_entry() {
+local entry="$1"
+local key="$2"
+echo "$entry" | tr ',' '\n' | grep -E "^${key}:" | cut -d':' -f2-
+}
+array_of_dict_add_entry() {
+local array_name="$1"
+local entry="$2"
+eval "${array_name}+=(\"$entry\")"
+}
+array_of_dict_remove_entry() {
+local array_name="$1"
+local entry="$2"
+eval "${array_name}=(\"\${${array_name}[@]/$entry}\")"
+}
+array_of_dict_print_entries() {
+local array_name="$1"
+eval "
+for entry in \"\${${array_name}[@]}\"; do
+echo \"Entry: \$entry\"
+done
+"
+}
+array_of_dict_iterate_entries() {
+local array_name="$1"
+local command="$2"
+eval "
+for entry in \"\${${array_name}[@]}\"; do
+${command}
+done
+"
+}
+dict_of_dict_parse_entry() {
+local entry="$1"
+local key="$2"
+echo "$entry" | tr ',' '\n' | grep -E "^${key}:" | cut -d':' -f2-
+}
+dict_of_dict_add_or_update_entry() {
+local dict_name="$1"
+local key="$2"
+local entry="$3"
+eval "${dict_name}[$key]=\"$entry\""
+}
+dict_of_dict_remove_entry() {
+local dict_name="$1"
+local key="$2"
+eval "unset ${dict_name}[$key]"
+}
+dict_of_dict_list_keys() {
+local dict_name="$1"
+eval "echo \${!${dict_name}[@]}"
+}
+dict_of_dict_iterate_entries() {
+local dict_name="$1"
+local command="$2"
+eval "
+for key in \${!${dict_name}[@]}; do
+value=\${${dict_name}[\$key]}
+${command}
+done
+"
+}
