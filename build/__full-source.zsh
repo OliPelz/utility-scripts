@@ -889,6 +889,21 @@ echo "$parsed_output"
 esac
 return 0
 }
+check_python_import_package() {
+local package_name="$1"
+if [ -z "$package_name" ]; then
+echo "Error: No package name provided."
+return 2
+fi
+python3 -c "import $package_name" &>/dev/null
+if [ $? -eq 0 ]; then
+echo "Package '$package_name' is importable."
+return 0
+else
+echo "Package '$package_name' is not importable."
+return 1
+fi
+}
 function log_proxy_state {
 if test_env_variable_defined USE_PROXY; then
 log_info "USE_PROXY is set, so will use a proxy"

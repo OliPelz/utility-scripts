@@ -81,3 +81,39 @@ parse_yaml() {
     return 0
 }
 
+check_python_import_package() {
+    : '
+    Check if a Python package is importable.
+
+    This function uses the Python CLI to check if a given package can be imported.
+    If the package is importable, it returns 0; otherwise, it returns 1.
+
+    Parameters:
+    - $1: Name of the Python package to check.
+
+    Example:
+        check_python_import_package "numpy"
+        if [ $? -eq 0 ]; then
+            echo "Package is importable."
+        else
+            echo "Package is not importable."
+        fi
+    '
+
+    local package_name="$1"
+
+    if [ -z "$package_name" ]; then
+        echo "Error: No package name provided."
+        return 2
+    fi
+
+    python3 -c "import $package_name" &>/dev/null
+    if [ $? -eq 0 ]; then
+        echo "Package '$package_name' is importable."
+        return 0
+    else
+        echo "Package '$package_name' is not importable."
+        return 1
+    fi
+}
+
