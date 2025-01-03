@@ -519,11 +519,15 @@ if [[ -z "$url" || -z "$output_file" ]]; then
 echo "Error: Missing required arguments: URL or output file path."
 return 1
 fi
+local output_dir
+output_dir=$(dirname "$output_file")
+mkdir -p "$output_dir"
+echo "Downloading $url to $output_file..."
 if curl -L -z "$output_file" -o "$output_file" "$url"; then
 echo "File downloaded or up-to-date: $output_file"
 return 0
 else
-echo "Error: Failed to download $url."
+echo "Error: Failed to download $url to $output_file"
 return 2
 fi
 }

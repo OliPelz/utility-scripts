@@ -179,40 +179,27 @@ download_directory_from_github() {
         return 1
     fi
 }
-
 download_if_newer() {
     : '
         Download File If Newer
 
-        ShortDesc: Downloads a file only if the remote file is newer based on the modification date.
+        ShortDesc: Downloads a file only if it is newer than the local copy or if the file does not exist locally.
 
         Description:
-        This function uses `curl` with the `-z` flag to compare the local file\s modification date
-        against the `Last-Modified` date on the server. If the remote file is newer, the file is downloaded.
-        If no local file exists, it downloads the remote file unconditionally.
+        This function uses curl to download a file from a URL only if the remote file is newer than the local file
+        or if the local file does not exist. It leverages the `-z` flag in curl for modification date comparison.
 
         Parameters:
         - $1 (required): URL of the file to download.
         - $2 (required): Local file path where the downloaded file will be saved.
 
         Returns:
-        - 0: File is up-to-date or successfully downloaded.
+        - 0: File downloaded or up-to-date.
         - 1: Missing required arguments (URL or output file path).
         - 2: Download failed.
 
         Example Usage:
-
-            # Scenario 1: Local file is up-to-date, no download occurs
-            download_if_newer "https://example.com/file.zip" "/local/path/file.zip"
-
-            # Scenario 2: Remote file is newer, download occurs
-            download_if_newer "https://example.com/updated.zip" "/local/path/file.zip"
-
-            # Scenario 3: No local file exists, download occurs
-            download_if_newer "https://example.com/new.zip" "/local/path/new.zip"
-
-        Notes:
-        - Requires `curl`.
+        download_if_newer "https://example.com/file.zip" "/local/path/file.zip"
     '
 
     local url=$1
@@ -224,12 +211,20 @@ download_if_newer() {
         return 1
     fi
 
-    # Use curl -z to download only if the remote file is newer
+    # Ensure output file directory exists
+    local output_dir
+    output_dir=$(dirname "$output_file")
+    mkdir -p "$output_dir"
+
+    # Debug logging
+    echo "Downloading $url to $output_file..."
+
+    # Use curl with -z for modification time comparison
     if curl -L -z "$output_file" -o "$output_file" "$url"; then
         echo "File downloaded or up-to-date: $output_file"
         return 0
     else
-        echo "Error: Failed to download $url."
+        echo "Error: Failed to download $url to $output_file"
         return 2
     fi
 }
