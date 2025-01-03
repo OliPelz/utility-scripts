@@ -523,12 +523,22 @@ local output_dir
 output_dir=$(dirname "$output_file")
 mkdir -p "$output_dir"
 echo "Downloading $url to $output_file..."
+if [[ -e "$output_file" ]]; then
 if curl -L -z "$output_file" -o "$output_file" "$url"; then
 echo "File downloaded or up-to-date: $output_file"
 return 0
 else
 echo "Error: Failed to download $url to $output_file"
 return 2
+fi
+else
+if curl -L -o "$output_file" "$url"; then
+echo "File downloaded: $output_file"
+return 0
+else
+echo "Error: Failed to download $url to $output_file"
+return 2
+fi
 fi
 }
 download_if_size_differs() {
@@ -538,25 +548,34 @@ if [[ -z "$url" || -z "$output_file" ]]; then
 echo "Error: Missing required arguments: URL or output file path."
 return 1
 fi
+local output_dir
+output_dir=$(dirname "$output_file")
+mkdir -p "$output_dir"
+echo "Checking remote size for $url..."
 local remote_size
 remote_size=$(curl -sI "$url" | awk '/^Content-Length:/ {print $2}' | tr -d '\r')
 if [[ -z "$remote_size" ]]; then
-echo "Error: Could not retrieve remote file size for $url."
+echo "Error: Failed to retrieve remote file size for $url."
 return 2
 fi
-local local_size=0
-if [[ -f "$output_file" ]]; then
-local_size=$(stat --format="%s" "$output_file")
-fi
+echo "Remote file size: $remote_size bytes"
+if [[ -e "$output_file" ]]; then
+local local_size
+local_size=$(stat -c%s "$output_file" 2>/dev/null || echo 0)
+echo "Local file size: $local_size bytes"
 if [[ "$remote_size" -eq "$local_size" ]]; then
-echo "File sizes match. No download needed: $output_file"
+echo "File sizes match. Skipping download."
 return 0
 fi
+else
+echo "Local file does not exist. Proceeding to download."
+fi
+echo "Downloading $url to $output_file..."
 if curl -L -o "$output_file" "$url"; then
 echo "File downloaded: $output_file"
 return 0
 else
-echo "Error: Failed to download $url."
+echo "Error: Failed to download $url to $output_file"
 return 3
 fi
 }

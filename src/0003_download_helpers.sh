@@ -179,6 +179,7 @@ download_directory_from_github() {
         return 1
     fi
 }
+
 download_if_newer() {
     : '
         Download File If Newer
@@ -219,13 +220,25 @@ download_if_newer() {
     # Debug logging
     echo "Downloading $url to $output_file..."
 
-    # Use curl with -z for modification time comparison
-    if curl -L -z "$output_file" -o "$output_file" "$url"; then
-        echo "File downloaded or up-to-date: $output_file"
-        return 0
+    # Check if file exists
+    if [[ -e "$output_file" ]]; then
+        # Use curl with -z for modification time comparison
+        if curl -L -z "$output_file" -o "$output_file" "$url"; then
+            echo "File downloaded or up-to-date: $output_file"
+            return 0
+        else
+            echo "Error: Failed to download $url to $output_file"
+            return 2
+        fi
     else
-        echo "Error: Failed to download $url to $output_file"
-        return 2
+        # Download file since it doesn't exist locally
+        if curl -L -o "$output_file" "$url"; then
+            echo "File downloaded: $output_file"
+            return 0
+        else
+            echo "Error: Failed to download $url to $output_file"
+            return 2
+        fi
     fi
 }
 
@@ -233,12 +246,11 @@ download_if_size_differs() {
     : '
         Download File If Size Differs
 
-        ShortDesc: Downloads a file only if the remote file size is different from the local file size.
+        ShortDesc: Downloads a file only if the remote file size differs from the local file size.
 
         Description:
-        This function compares the size of a local file with the size of a remote file.
-        If the remote file size is different, the file is downloaded. If no local file exists,
-        it downloads the remote file unconditionally.
+        This function checks the size of a file on the remote server and compares it with the size of the local file.
+        If the sizes differ, or if the local file does not exist, it downloads the file.
 
         Parameters:
         - $1 (required): URL of the file to download.
@@ -251,18 +263,7 @@ download_if_size_differs() {
         - 3: Download failed.
 
         Example Usage:
-
-            # Scenario 1: Local file size matches remote file size, no download occurs
-            download_if_size_differs "https://example.com/file.zip" "/local/path/file.zip"
-
-            # Scenario 2: Remote file size differs, download occurs
-            download_if_size_differs "https://example.com/updated.zip" "/local/path/file.zip"
-
-            # Scenario 3: No local file exists, download occurs
-            download_if_size_differs "https://example.com/new.zip" "/local/path/new.zip"
-
-        Notes:
-        - Requires `curl`.
+        download_if_size_differs "https://example.com/file.zip" "/local/path/file.zip"
     '
 
     local url=$1
@@ -274,33 +275,48 @@ download_if_size_differs() {
         return 1
     fi
 
+    # Ensure output file directory exists
+    local output_dir
+    output_dir=$(dirname "$output_file")
+    mkdir -p "$output_dir"
+
+    # Debug logging
+    echo "Checking remote size for $url..."
+
     # Get remote file size
     local remote_size
     remote_size=$(curl -sI "$url" | awk '/^Content-Length:/ {print $2}' | tr -d '\r')
+
     if [[ -z "$remote_size" ]]; then
-        echo "Error: Could not retrieve remote file size for $url."
+        echo "Error: Failed to retrieve remote file size for $url."
         return 2
     fi
 
-    # Get local file size if it exists
-    local local_size=0
-    if [[ -f "$output_file" ]]; then
-        local_size=$(stat --format="%s" "$output_file")
+    echo "Remote file size: $remote_size bytes"
+
+    # Check if local file exists and get its size
+    if [[ -e "$output_file" ]]; then
+        local local_size
+        local_size=$(stat -c%s "$output_file" 2>/dev/null || echo 0)
+
+        echo "Local file size: $local_size bytes"
+
+        # Compare sizes
+        if [[ "$remote_size" -eq "$local_size" ]]; then
+            echo "File sizes match. Skipping download."
+            return 0
+        fi
+    else
+        echo "Local file does not exist. Proceeding to download."
     fi
 
-    # Compare file sizes
-    if [[ "$remote_size" -eq "$local_size" ]]; then
-        echo "File sizes match. No download needed: $output_file"
-        return 0
-    fi
-
-    # Download the file if sizes differ
+    # Download file
+    echo "Downloading $url to $output_file..."
     if curl -L -o "$output_file" "$url"; then
         echo "File downloaded: $output_file"
         return 0
     else
-        echo "Error: Failed to download $url."
+        echo "Error: Failed to download $url to $output_file"
         return 3
     fi
 }
-
