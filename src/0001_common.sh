@@ -345,22 +345,21 @@ create_temp() {
     '
     local type="$1"
     local delete_on_exit="${2:-true}"
-    local suffix="${3:-''}"
+    local suffix="${3:-}"  # Correctly set to an empty string
     local temp_path=""
 
-
     if [[ "$type" == "file" ]]; then
-	if ! [[ "$suffix" == '' ]]; then
-           temp_path=$(mktemp --suffix $suffix)
-	else
+        if [[ -n "$suffix" ]]; then  # Check if suffix is not empty
+           temp_path=$(mktemp --suffix="$suffix")
+        else
            temp_path=$(mktemp)
-	fi
+        fi
     elif [[ "$type" == "dir" ]]; then
-	if ! [[ "$suffix" == '' ]]; then
-           temp_path=$(mktemp -d --suffix $suffix)
-	else
+        if [[ -n "$suffix" ]]; then
+           temp_path=$(mktemp -d --suffix="$suffix")
+        else
            temp_path=$(mktemp -d)
-	fi
+        fi
     else
         echo "Invalid type specified. Use 'file' or 'dir'."
         return 1

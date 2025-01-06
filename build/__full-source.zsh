@@ -99,17 +99,17 @@ return 1  # Failure, the variable is either not set or not true
 create_temp() {
 local type="$1"
 local delete_on_exit="${2:-true}"
-local suffix="${3:-''}"
+local suffix="${3:-}"
 local temp_path=""
 if [[ "$type" == "file" ]]; then
-if ! [[ "$suffix" == '' ]]; then
-temp_path=$(mktemp --suffix $suffix)
+if [[ -n "$suffix" ]]; then
+temp_path=$(mktemp --suffix="$suffix")
 else
 temp_path=$(mktemp)
 fi
 elif [[ "$type" == "dir" ]]; then
-if ! [[ "$suffix" == '' ]]; then
-temp_path=$(mktemp -d --suffix $suffix)
+if [[ -n "$suffix" ]]; then
+temp_path=$(mktemp -d --suffix="$suffix")
 else
 temp_path=$(mktemp -d)
 fi
