@@ -9,6 +9,8 @@ ShortDesc: A script for rendering templates using environment variables, support
 
 Description:
 This script processes a directory of template files, replacing `{{var_name}}` placeholders with corresponding environment variable values. It also supports renaming directories containing placeholders in their names.
+It will also work with ${varname} javascript and bash $VARNAME variables by NOT expanding them! Only {{ var_name }} will be expanded which is cool
+
 IMPORTANT: Only files ending with `.j2` are processed!
 IMPORTANT2: Directory names with placeholders like `__{{VAR_NAME}}__` are renamed based on the variable value.
 IMPORTANT3: you now can define a template like dotfile-myfilename.txt.j2 and it will be rendered to .myfilename.txt
@@ -20,6 +22,10 @@ Parameters:
 --env-file <path>: OPTIONAL! A file containing environment variable definitions for rendering templates. 
                    If not provided, uses the current environment variables.
 --help: Display usage information and exit.
+
+Examples:
+./render_templates.sh --template-dir ./templates --output-dir ./output --env-file envfile.env
+
 
 Returns:
 - 0: Success
