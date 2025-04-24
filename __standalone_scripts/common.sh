@@ -148,6 +148,7 @@ fc_get_parent_directory() {
 
 fc_pcurl_wrapper() {
     : '
+        v.0.01
         Curl Wrapper with Proxy and Certificate Support
 
         ShortDesc: A flexible curl wrapper that supports proxy and certificate options, with an option to download to a temporary file.

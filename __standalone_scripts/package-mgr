@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -x
 : '
 v.0.01
 Package Manager Wrapper Script
@@ -21,6 +21,7 @@ Environment Variables:
 - USE_PROXY: Set to true to enable proxy usage, false to disable it.
 - HTTPS_PROXY: The proxy URL to use.
 - CERT_BASE64_STRING: Base64-encoded SSL certificate string for verifying proxy connections (optional).
+
 
 Returns:
 - 0: Success (including re-download for pacman)
@@ -62,15 +63,6 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-if [ "$USE_AUR" == "true" ]; then
-   if root; then
-       fc_log_error "when using --use-aur, you must NOT run this script as root or sudo!, ONLY normal user privilege is allowed"
-       exit 1
-   else
-      fc_log_error "needs sudo"
-      exit 1
-else 
-fi
 
 # Proxy and SSL certificate setup
 function setup_proxy_and_cert() {
@@ -135,9 +127,9 @@ function _pacman_wrapper {
     else
         # Fallback to plain pacman for official repo packages
         case "$action" in
-            install) $USE_AUR --config "$config_file" -Sy $CONFIRM ${packages//,/ } ;;
-            remove) $USE_AUR --config "$config_file" -R $CONFIRM ${packages//,/ } ;;
-            update) $USE_AUR --config "$config_file" -Syu $CONFIRM ;;
+            install) $EXECUTABLE --config "$config_file" -Sy $CONFIRM ${packages//,/ } ;;
+            remove) $EXECUTABLE --config "$config_file" -R $CONFIRM ${packages//,/ } ;;
+            update) $EXECUTABLE --config "$config_file" -Syu $CONFIRM ;;
         esac
     fi
 
@@ -221,9 +213,21 @@ function _apt_wrapper {
 
 function main {
     # Ensure script is run as root
+    root=0
     if [[ $EUID -ne 0 ]]; then
-        fc_log_error "script needs to be run as root"
-        exit 1
+       root=1
+    fi
+
+    if [ "$USE_AUR" == "true" ]; then
+        if [ "$root" -eq "0" ]; then
+           fc_log_error "when using --use-aur, you must NOT run this script as root or sudo!, ONLY normal user privilege is allowed"
+           exit 1
+        fi
+    else
+	if [ "$root" -ne "0" ]; then
+	   fc_log_error "needs sudo"
+	   exit 1 
+	fi 
     fi
 
     # Set up proxy and SSL cert if enabled
