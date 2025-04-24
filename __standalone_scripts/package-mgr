@@ -1,6 +1,7 @@
 #!/bin/bash
 
 : '
+v.0.01
 Package Manager Wrapper Script
 
 ShortDesc: A script to wrap package manager commands (pacman, dnf, apt) with optional proxy support, universal install/remove/update commands, and SSL certificate handling.
