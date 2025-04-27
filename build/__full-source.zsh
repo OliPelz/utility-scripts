@@ -339,6 +339,70 @@ echo "Error: Failed to install $command_name."
 return 1
 fi
 }
+menu_select() {
+local menu_title="$1"; shift
+local titles=("${!1}"); shift
+local keys=("${!1}"); shift
+local __resultvar=$1; shift
+local default_selected_idx="${1:-0}"
+local GREEN="\e[32m" RESET="\e[0m" BOLD="\e[1m"
+local selected=$default_selected_idx
+local _selected_indices=("$default_selected_idx")
+local used_tab=0
+tput civis
+local draw_menu; draw_menu() {
+clear
+echo -e "${BOLD}$menu_title${RESET}\n"
+for i in "${!titles[@]}"; do
+local pointer=" "; local mark="[ ]"
+[ "$i" -eq "$selected" ] && pointer="${GREEN}>${RESET}"
+for j in "${_selected_indices[@]}"; do
+[ "$j" -eq "$i" ] && mark="[${BOLD}x${RESET}]" && break
+done
+echo -e "$pointer $mark ${titles[$i]}"
+done
+}
+local toggle_selection; toggle_selection() {
+local idx="$1"
+for j in "${!_selected_indices[@]}"; do
+if [ "${_selected_indices[j]}" -eq "$idx" ]; then
+unset '_selected_indices[j]'
+_selected_indices=("${_selected_indices[@]}")
+return
+fi
+done
+_selected_indices+=("$idx")
+}
+while true; do
+draw_menu
+IFS= read -rsn1 key
+if [[ $key == $'\x1b' ]]; then
+read -rsn1 -t 0.1 key2; [[ $key2 == "[" ]] && read -rsn1 -t 0.1 key3 && {
+[[ $key3 == "A" ]] && ((selected--)); [[ $key3 == "B" ]] && ((selected++))
+((selected<0)) && selected=$((${#titles[@]}-1))
+((selected>=${#titles[@]})) && selected=0
+}
+elif [[ $key == $'\t' ]]; then
+toggle_selection "$selected"
+used_tab=1
+elif [[ $key == "" ]]; then
+local results=()
+if [ ${#_selected_indices[@]} -eq 0 ]; then
+if [ "$used_tab" -eq 0 ] && [ "${keys[$selected]}" != "exit" ]; then
+results+=("${keys[$selected]}")
+fi
+else
+for idx in "${_selected_indices[@]}"; do
+[ "${keys[$idx]}" != "exit" ] && results+=("${keys[$idx]}")
+done
+fi
+local final="${results[*]}"
+[[ "$__resultvar" ]] && eval $__resultvar="'$final'" || echo "$final"
+break
+fi
+done
+tput cnorm; clear
+}
 if [ -n "$BASH_VERSION" ]; then
 declare -A bash_colors
 bash_colors["black"]="\033[0;30m"
