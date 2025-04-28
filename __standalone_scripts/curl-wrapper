@@ -1,0 +1,126 @@
+#!/bin/bash
+
+: '
+v.0.01
+Curl Proxy Wrapper Script
+
+ShortDesc: A wrapper script for the curl command that supports optional proxy and SSL certificate usage.
+
+Description:
+This script provides a convenient way to execute curl commands with optional proxy settings
+and SSL certificate handling. It takes a URL as a parameter and any additional curl
+parameters as subsequent arguments. If proxy usage is enabled via the USE_PROXY environment variable,
+it configures curl to use the specified proxy. If a base64-encoded SSL certificate is provided,
+it decodes it to a temporary file for use with curl.
+
+Parameters:
+- -u URL: The URL to be requested with curl.
+- -p additional_params: Additional parameters to pass to the curl command (optional).
+- -h: Display this help message.
+
+Environment Variables:
+- USE_PROXY: Set to "true" to enable proxy usage.
+- HTTPS_PROXY: The proxy URL to use if USE_PROXY is true.
+- CERT_BASE64_STRING: Base64-encoded SSL certificate string for verifying proxy connections (optional).
+
+Returns:
+- 0: Success (curl command executed successfully)
+- 1: Failure (if the curl command fails)
+
+Example Usage:
+./curl-wrapper -u "https://example.com" -p "--verbose --header 'User-Agent: CustomAgent'"
+'
+
+# Function to check if an environment variable is defined
+function test_env_variable_defined {
+    local var_name="$1"
+    if [ -z "${!var_name}" ]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
+# Function to create a temporary file
+function create_temp_file {
+    mktemp /tmp/pcurl_wrapper_cert.XXXXXX
+}
+
+# Function to display usage information
+function usage {
+    echo "Usage: $0 [-u URL] [-p additional_params]"
+    echo "  -u URL                 The URL to be requested with curl."
+    echo "  -p additional_params   Additional parameters to pass to the curl command (optional)."
+    echo "  -h                     Display this help message."
+}
+
+# Function to handle the curl command with optional proxy and SSL certificate
+function pcurl_wrapper {
+
+    local url="$1"
+    shift
+    local additional_params="$@"
+
+    local curl_cmd="curl"
+    local proxy_cmd=""
+    local cert_cmd=""
+
+    if [ "${USE_PROXY,,}" == "true" ]; then
+        if test_env_variable_defined CERT_BASE64_STRING; then
+            # Create a temporary file for the cert
+            TEMP_CERT_FILE=$(create_temp_file)
+            echo "${CERT_BASE64_STRING}" | base64 -d > "${TEMP_CERT_FILE}"
+            cert_cmd="--cacert ${TEMP_CERT_FILE}"
+        fi
+        proxy_cmd="--proxy ${HTTPS_PROXY}"
+    fi
+
+    # Execute curl with the appropriate options
+    ${curl_cmd} ${proxy_cmd} ${cert_cmd} ${additional_params} "${url}"
+    rc=$?
+
+    # Clean up temporary cert file if created
+    if [ -n "${TEMP_CERT_FILE}" ]; then
+        rm "${TEMP_CERT_FILE}"
+    fi
+    return $rc
+}
+
+# Parse command-line arguments
+while getopts ":u:p:h" opt; do
+    case ${opt} in
+        u )
+            url=$OPTARG
+            ;;
+        p )
+            additional_params=$OPTARG
+            ;;
+        h )
+            usage
+            exit 0
+            ;;
+        \? )
+            echo "Invalid option: -$OPTARG" >&2
+            usage
+            exit 1
+            ;;
+        : )
+            echo "Option -$OPTARG requires an argument." >&2
+            usage
+            exit 1
+            ;;
+    esac
+done
+shift $((OPTIND -1))
+
+# Check if URL is provided
+if [ -z "${url}" ]; then
+    echo "Error: URL is required."
+    usage
+    exit 1
+fi
+
+# Call the pcurl_wrapper function with the provided arguments
+pcurl_wrapper "${url}" ${additional_params}
+exit $?
+
