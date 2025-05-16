@@ -1094,6 +1094,22 @@ rm "${TEMP_CERT_FILE}"
 fi
 exit $rc
 }
+simple_template() {
+local vars_str="$1"
+local template_file="$2"
+local output_file="$3"
+[[ ! -f "$template_file" ]] && { echo "Template file not found: $template_file"; return 1; }
+IFS=',' read -ra VARS <<< "$vars_str"
+local sed_exprs=""
+for var in "${VARS[@]}"; do
+if [[ -z "${!var+x}" ]]; then
+echo "Error: environment variable '$var' is not set or exported"
+return 1
+fi
+sed_exprs+=" -e s|{{${var}}}|${!var}|g"
+done
+eval sed $sed_exprs "$template_file" > "$output_file"
+}
 vault() {
 local action=""
 local file=""
